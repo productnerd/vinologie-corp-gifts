@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { eur } from '../lib/pricing'
 import { asset } from '../lib/asset'
 
 const ACCEPT_LABEL = { wine: 'Wine', red_wine: 'Red', white_wine: 'White', spirits: 'Spirit', snacks: 'Snack' }
@@ -150,12 +149,6 @@ export default function BoxVisual({ box, bowOptions, paperOptions, activeSlotId,
             </>
           )}
         </div>
-
-        {!mini && (
-          <div className="absolute bottom-[2%] left-[2%] z-30 rounded-full bg-cream px-3 py-1.5 text-sm font-semibold text-ink shadow">
-            {eur(unitPrice)} <span className="font-normal opacity-60">/ box</span>
-          </div>
-        )}
       </div>
     </div>
   )

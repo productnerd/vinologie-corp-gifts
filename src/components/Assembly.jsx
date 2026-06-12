@@ -69,18 +69,31 @@ export default function Assembly({
       <div>
         <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-cream/40">Start from a template</div>
         <div className="flex flex-wrap gap-2">
-          {templates.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => onApplyTemplate(t)}
-              className="rounded-full border border-cream/25 bg-cream/10 px-3 py-1.5 text-sm font-medium text-cream hover:bg-cream hover:text-ink"
-            >
-              {t.name}
-            </button>
-          ))}
+          {templates.map((t) => {
+            const active = box.templateId === t.id
+            return (
+              <button
+                key={t.id}
+                onClick={() => onApplyTemplate(t)}
+                className={
+                  'rounded-full border px-3 py-1.5 text-sm font-medium transition ' +
+                  (active
+                    ? 'border-cream bg-cream text-ink'
+                    : 'border-cream/25 bg-cream/10 text-cream hover:bg-cream/20')
+                }
+              >
+                {t.name}
+              </button>
+            )
+          })}
           <button
             onClick={() => onApplyTemplate(null)}
-            className="rounded-full border border-white/15 px-3 py-1.5 text-sm font-medium text-cream/50 hover:bg-white/5"
+            className={
+              'rounded-full border px-3 py-1.5 text-sm font-medium transition ' +
+              (box.templateId === 'custom'
+                ? 'border-cream bg-cream text-ink'
+                : 'border-white/15 text-cream/50 hover:bg-white/5')
+            }
           >
             Custom · unlimited
           </button>

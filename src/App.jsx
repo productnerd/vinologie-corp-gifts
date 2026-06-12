@@ -7,6 +7,7 @@ import BasketDrawer from './components/BasketDrawer'
 import OrderForm from './components/OrderForm'
 import AiAssistant from './components/AiAssistant'
 import ConfirmModal from './components/ConfirmModal'
+import HumanSommModal from './components/HumanSommModal'
 
 const slotAccepts = (accept, category) =>
   accept === 'wine' ? category === 'red_wine' || category === 'white_wine' : accept === category
@@ -16,13 +17,16 @@ export default function App() {
   const [loadError, setLoadError] = useState(null)
 
   // box.locked = true when a template defines fixed slots (no extra adds allowed)
-  const [box, setBox] = useState({ slots: [], bowId: null, paperId: null, locked: false })
+  // box.templateId = which chip is active ('custom' or a template id)
+  const [box, setBox] = useState({ slots: [], bowId: null, paperId: null, locked: false, templateId: 'custom' })
   const [activeSlotId, setActiveSlotId] = useState(null)
   const [basket, setBasket] = useState([])
   const [editingLineId, setEditingLineId] = useState(null)
   const [basketOpen, setBasketOpen] = useState(false)
   const [orderOpen, setOrderOpen] = useState(false)
   const [aiOpen, setAiOpen] = useState(false)
+  const [humanOpen, setHumanOpen] = useState(false)
+  const [aiBrief, setAiBrief] = useState('') // persists the last AI Somm prompt
   const [toast, setToast] = useState(null)
   const [confirm, setConfirm] = useState(null) // { message, confirmLabel, onConfirm }
   const sidRef = useRef(1)
@@ -59,7 +63,7 @@ export default function App() {
       for (const c of cats.data) productsByCat[c.id].sort((a, b) => Number(a.price) - Number(b.price))
 
       setData({ categories: cats.data, productsByCat, productsById, templates: tmpls.data, bowOptions, paperOptions })
-      setBox({ slots: [], bowId: bowOptions[0]?.id ?? null, paperId: paperOptions[0]?.id ?? null, locked: false })
+      setBox({ slots: [], bowId: bowOptions[0]?.id ?? null, paperId: paperOptions[0]?.id ?? null, locked: false, templateId: 'custom' })
     })()
   }, [])
 
@@ -97,6 +101,7 @@ export default function App() {
         ...b,
         slots: filled.map((p) => ({ sid: nextSid(), accept: p.category_id, product: p, fromTemplate: false })),
         locked: false,
+        templateId: 'custom',
       }))
       setActiveSlotId(null)
       return
@@ -112,7 +117,7 @@ export default function App() {
       })
       return
     }
-    setBox((b) => ({ ...b, slots, locked: true }))
+    setBox((b) => ({ ...b, slots, locked: true, templateId: t.id }))
     setActiveSlotId(null)
   }
 
@@ -134,7 +139,7 @@ export default function App() {
         slots.push({ sid: nextSid(), accept: product.category_id, product, fromTemplate: false })
       }
     }
-    setBox((b) => ({ ...b, slots, locked: false }))
+    setBox((b) => ({ ...b, slots, locked: false, templateId: 'custom' }))
     setActiveSlotId(null)
     setAiOpen(false)
   }
@@ -176,7 +181,7 @@ export default function App() {
     }
   }
 
-  const resetBox = () => setBox((b) => ({ slots: [], bowId: b.bowId, paperId: b.paperId, locked: false }))
+  const resetBox = () => setBox((b) => ({ slots: [], bowId: b.bowId, paperId: b.paperId, locked: false, templateId: 'custom' }))
 
   // --- basket ---
   function addToBasket() {
@@ -194,7 +199,7 @@ export default function App() {
   function editLine(id) {
     const line = basket.find((l) => l.id === id)
     if (!line) return
-    setBox(JSON.parse(JSON.stringify(line.box)))
+    setBox({ ...JSON.parse(JSON.stringify(line.box)), locked: false, templateId: 'custom' })
     setEditingLineId(id)
     setBasketOpen(false)
   }
@@ -229,13 +234,13 @@ export default function App() {
   return (
     <div className="flex h-full flex-col">
       <header className="flex items-center justify-between border-b border-white/10 bg-panel px-8 py-5">
-        <div className="flex items-baseline gap-2">
-          <span className="text-xl font-semibold tracking-tight text-cream">Vinologie</span>
+        <div className="flex items-baseline gap-2.5">
+          <span className="font-display text-2xl text-cream">Vinologie</span>
           <span className="text-sm text-cream/50">Corporate Gift Boxes</span>
         </div>
         <button
           onClick={() => setBasketOpen(true)}
-          className="relative rounded-full bg-cream px-4 py-2 text-sm font-medium text-ink hover:bg-white"
+          className="glow-cta relative rounded-full bg-cream px-4 py-2 text-sm font-medium text-ink hover:bg-white"
         >
           Basket
           {totals.boxCount > 0 && (
@@ -244,14 +249,19 @@ export default function App() {
         </button>
       </header>
 
-      <main className="grid flex-1 grid-cols-1 gap-8 overflow-hidden p-8 lg:grid-cols-[minmax(0,440px)_1fr]">
-        {/* LEFT */}
-        <section className="flex flex-col rounded-2xl border border-white/10 bg-panel p-8 shadow-sm">
+      {/* Mobile: assembling is easier on a bigger screen */}
+      <div className="flex items-center justify-center gap-2 bg-gold/10 px-4 py-2 text-center text-xs text-gold lg:hidden">
+        Tip: this builder works best on a desktop — assembling boxes is easier on a larger screen.
+      </div>
+
+      <main className="grid flex-1 grid-cols-1 gap-8 overflow-y-auto p-6 sm:p-8 lg:grid-cols-[minmax(0,600px)_1fr] lg:overflow-hidden">
+        {/* LEFT — box (shown first, so it's on top on mobile) */}
+        <section className="flex flex-col rounded-2xl border border-white/10 bg-panel p-5 shadow-sm">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-cream/40">Your box</h2>
+            <h2 className="font-display text-base text-cream/80">Your box</h2>
             {editingLineId && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-700">Editing basket box</span>}
           </div>
-          <div className="mt-4 flex flex-1 flex-col">
+          <div className="warm-glow mt-2 flex flex-1 flex-col">
             <BoxVisual
               box={box} bowOptions={data.bowOptions} paperOptions={data.paperOptions}
               activeSlotId={activeSlotId} onSlotClick={onSlotClick} unitPrice={unitPrice}
@@ -260,22 +270,30 @@ export default function App() {
           <button
             onClick={addToBasket}
             disabled={filledCount === 0}
-            className="mt-5 w-full rounded-full bg-cream py-3 font-semibold text-ink hover:bg-white disabled:opacity-40"
+            className="glow-cta mt-5 w-full rounded-full bg-cream py-3 font-semibold text-ink hover:bg-white disabled:opacity-40 disabled:shadow-none"
           >
             {editingLineId ? 'Update box in basket' : `Add box to basket · ${eur(unitPrice)}`}
           </button>
         </section>
 
-        {/* RIGHT */}
-        <section className="overflow-y-auto rounded-2xl border border-white/10 bg-panel p-8 shadow-sm">
-          <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-cream/40">Assemble</h2>
-            <button
-              onClick={() => setAiOpen(true)}
-              className="rounded-full border border-gold/40 bg-gold/10 px-3 py-1.5 text-sm font-semibold text-gold transition hover:bg-gold hover:text-ink"
-            >
-              ✨ AI Somm
-            </button>
+        {/* RIGHT — assembly */}
+        <section className="overflow-y-auto rounded-2xl border border-white/10 bg-panel p-6 shadow-sm sm:p-8">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
+            <h2 className="font-display text-base text-cream/80">Assemble</h2>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setHumanOpen(true)}
+                className="rounded-full border border-white/15 px-3 py-1.5 text-sm font-medium text-cream/70 hover:bg-white/5"
+              >
+                Talk to a human somm
+              </button>
+              <button
+                onClick={() => setAiOpen(true)}
+                className="rounded-full border border-gold/40 bg-gold/10 px-3 py-1.5 text-sm font-semibold text-gold transition hover:bg-gold hover:text-ink"
+              >
+                ✨ AI Somm
+              </button>
+            </div>
           </div>
           <Assembly
             templates={data.templates} categories={data.categories} productsByCat={data.productsByCat}
@@ -298,7 +316,8 @@ export default function App() {
       {orderOpen && (
         <OrderForm totals={totals} onClose={() => setOrderOpen(false)} onSubmit={submitOrder} />
       )}
-      {aiOpen && <AiAssistant onClose={() => setAiOpen(false)} onUse={applyAiBox} />}
+      {aiOpen && <AiAssistant brief={aiBrief} onBriefChange={setAiBrief} onClose={() => setAiOpen(false)} onUse={applyAiBox} />}
+      {humanOpen && <HumanSommModal onClose={() => setHumanOpen(false)} />}
 
       {confirm && (
         <ConfirmModal

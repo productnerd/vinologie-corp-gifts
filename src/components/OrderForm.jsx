@@ -27,7 +27,7 @@ export default function OrderForm({ totals, onClose, onSubmit }) {
         {status === 'done' ? (
           <div className="text-center">
             <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-2xl">✓</div>
-            <h2 className="text-lg font-semibold text-cream/85">Order received</h2>
+            <h2 className="font-display text-lg text-cream/85">Order received</h2>
             <p className="mt-2 text-sm text-cream/60">
               Thank you! Our team will review your {totals.boxCount} boxes and call you shortly to confirm the details.
             </p>
@@ -35,7 +35,7 @@ export default function OrderForm({ totals, onClose, onSubmit }) {
           </div>
         ) : (
           <form onSubmit={submit}>
-            <h2 className="text-lg font-semibold text-cream">Submit your order</h2>
+            <h2 className="font-display text-lg text-cream">Submit your order</h2>
             <p className="mt-1 text-sm text-cream/50">
               {totals.boxCount} boxes · {eur(totals.total)}{totals.discountPct > 0 ? ` (incl. ${totals.discountPct}% bulk discount)` : ''}
             </p>

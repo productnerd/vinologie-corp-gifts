@@ -1,5 +1,18 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "ABC Ginto Nord";
+  src: url("./fonts/ABCGintoNord-Regular.otf") format("opentype");
+  font-weight: 100 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Collidge Rounded";
+  src: url("./fonts/Collidge-Rounded.ttf") format("truetype");
+  font-weight: 100 900;
+  font-display: swap;
+}
+
 @theme {
   --color-ink: #14100d;      /* page background */
   --color-panel: #1f1813;    /* cards / panels */
@@ -8,6 +21,8 @@
   --color-gold: #c9a35e;     /* secondary accent */
   --color-wine: #7a2438;     /* retained for tiny removal accents */
   --color-wine-dark: #5a1828;
+  --font-sans: "ABC Ginto Nord", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Collidge Rounded", "ABC Ginto Nord", ui-sans-serif, sans-serif;
 }
 
 html, body, #root {
@@ -23,5 +38,27 @@ body {
   margin: 0;
   background: var(--color-ink);
   color: var(--color-cream);
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-sans);
+}
+
+/* Headlines use the rounded display face. */
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: 0.01em;
+}
+
+/* Subtle warm glow used selectively behind focal elements. */
+.warm-glow {
+  position: relative;
+}
+.warm-glow::before {
+  content: "";
+  position: absolute;
+  inset: -12% -8% 0 -8%;
+  z-index: 0;
+  background: radial-gradient(60% 55% at 50% 42%, rgba(201, 163, 94, 0.18), rgba(201, 163, 94, 0) 70%);
+  pointer-events: none;
+}
+.glow-cta {
+  box-shadow: 0 0 0 1px rgba(201, 163, 94, 0.12), 0 8px 30px -8px rgba(201, 163, 94, 0.28);
 }

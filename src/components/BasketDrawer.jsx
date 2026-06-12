@@ -12,7 +12,7 @@ export default function BasketDrawer({ basket, totals, opts, onClose, onQty, onE
     <div className="fixed inset-0 z-40 flex justify-end bg-black/40" onClick={onClose}>
       <div className="flex h-full w-full max-w-md flex-col bg-panel shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-          <h2 className="text-lg font-semibold text-cream">Your basket</h2>
+          <h2 className="font-display text-lg text-cream">Your basket</h2>
           <button onClick={onClose} className="text-2xl leading-none text-cream/40 hover:text-cream/70">×</button>
         </div>
 
