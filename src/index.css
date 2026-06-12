@@ -1,10 +1,13 @@
 @import "tailwindcss";
 
 @theme {
-  --color-wine: #6b1f33;
-  --color-wine-dark: #4a1422;
-  --color-cream: #f7f1e8;
-  --color-gold: #b8924a;
+  --color-ink: #14100d;      /* page background */
+  --color-panel: #1f1813;    /* cards / panels */
+  --color-panel2: #2a211a;   /* inputs, subtle fills */
+  --color-cream: #f2ece1;    /* primary off-white accent + text */
+  --color-gold: #c9a35e;     /* secondary accent */
+  --color-wine: #7a2438;     /* retained for tiny removal accents */
+  --color-wine-dark: #5a1828;
 }
 
 html, body, #root {
@@ -13,6 +16,7 @@ html, body, #root {
 
 body {
   margin: 0;
-  background: var(--color-cream);
+  background: var(--color-ink);
+  color: var(--color-cream);
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }

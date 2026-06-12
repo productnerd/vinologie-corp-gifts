@@ -7,12 +7,21 @@ const isTall = (accept) => accept === 'wine' || accept === 'red_wine' || accept 
 
 // Inner filler rectangle of the box image (where products rest).
 const INNER = 'absolute inset-x-[19%] top-[15%] bottom-[15%]'
+// A full wine bottle (display_scale 1.0) renders at this % of the box height.
+const UNIT = 56
+// Max items shown per row before collapsing the rest into a "+N more" pill.
+const CAP_BOTTLES = 6
+const CAP_SNACKS = 8
 
-function ProductImg({ product, className }) {
+const scaleOf = (slot) =>
+  Number(slot.product?.display_scale) || (isTall(slot.accept) ? 0.92 : 0.42)
+
+function ProductImg({ product, style }) {
   const [src, setSrc] = useState(asset(`assets/products/${product.slug}.png`))
   return (
     <img
-      src={src} alt={product.name} className={className} draggable={false}
+      src={src} alt={product.name} draggable={false} style={style}
+      className="w-auto max-w-full object-contain object-bottom drop-shadow-lg"
       onError={() => { if (product.source_photo_url && src !== product.source_photo_url) setSrc(product.source_photo_url) }}
     />
   )
@@ -41,19 +50,20 @@ function BowOverlay({ bow, mini }) {
   )
 }
 
-// Each item lives in its own flex cell (flex-1, capped width) so cells sit side by
-// side with a gap and never overlap. The image fits inside its cell (object-contain),
-// so more items just shrink to fit the row instead of colliding.
+// Each item gets its own flex cell so cells never overlap. Height is driven by
+// display_scale (relative real-world size); object-contain keeps it tidy.
 function Cell({ slot, active, onClick, mini }) {
   const tall = isTall(slot.accept)
-  const cell = `flex h-full min-w-0 flex-1 items-end justify-center ${tall ? 'max-w-[24%]' : 'max-w-[22%]'}`
+  const cell = `flex min-w-0 flex-1 items-end justify-center ${tall ? 'max-w-[24%]' : 'max-w-[22%]'}`
+  const h = { height: `${(scaleOf(slot) * UNIT).toFixed(1)}cqh` }
 
   if (slot.product) {
-    const img = (cls) => <ProductImg product={slot.product} className={'h-full w-full object-contain object-bottom drop-shadow-lg ' + cls} />
-    if (mini) return <div className={cell}>{img('')}</div>
+    if (mini) return <div className={cell}><ProductImg product={slot.product} style={h} /></div>
     return (
       <button onClick={onClick} className={'group relative ' + cell} title={`${slot.product.name} — click to remove`}>
-        {img('transition group-hover:-translate-y-1')}
+        <div className="flex items-end transition group-hover:-translate-y-1" style={h}>
+          <ProductImg product={slot.product} style={{ height: '100%' }} />
+        </div>
         <span className="absolute right-0 top-0 hidden h-5 w-5 items-center justify-center rounded-full bg-wine text-xs text-white group-hover:flex">×</span>
       </button>
     )
@@ -63,13 +73,37 @@ function Cell({ slot, active, onClick, mini }) {
     <div className={cell}>
       <button
         onClick={onClick}
+        style={{ height: `${(tall ? 0.82 : 0.42) * UNIT}cqh` }}
         className={
-          'flex h-[80%] w-full items-center justify-center rounded-lg border-2 border-dashed text-[9px] font-semibold uppercase tracking-wide transition ' +
-          (active ? 'border-gold bg-gold/10 text-gold' : 'border-black/25 text-black/30 hover:border-black/45')
+          'flex w-full items-center justify-center rounded-lg border-2 border-dashed text-[9px] font-semibold uppercase tracking-wide transition ' +
+          (active ? 'border-gold bg-gold/10 text-gold' : 'border-white/25 text-white/40 hover:border-white/50')
         }
       >
         {ACCEPT_LABEL[slot.accept] || 'Item'}
       </button>
+    </div>
+  )
+}
+
+function MorePill({ n }) {
+  return (
+    <div className="flex min-w-0 flex-1 max-w-[22%] items-end justify-center">
+      <span className="rounded-full bg-ink/80 px-2.5 py-1 text-[11px] font-semibold text-cream ring-1 ring-white/15">
+        +{n} more
+      </span>
+    </div>
+  )
+}
+
+function Row({ items, cap, cellFor }) {
+  if (items.length === 0) return null
+  const overflow = items.length > cap
+  const shown = overflow ? items.slice(0, cap - 1) : items
+  const more = overflow ? items.length - shown.length : 0
+  return (
+    <div className="flex items-end justify-center gap-[3%]">
+      {shown.map(cellFor)}
+      {more > 0 && <MorePill n={more} />}
     </div>
   )
 }
@@ -81,12 +115,11 @@ export default function BoxVisual({ box, bowOptions, paperOptions, activeSlotId,
   const bottles = box.slots.filter((s) => isTall(s.accept))
   const snacks = box.slots.filter((s) => !isTall(s.accept))
 
-  const cell = (s) => <Cell key={s.sid} slot={s} active={s.sid === activeSlotId} onClick={() => onSlotClick?.(s)} mini={mini} />
+  const cellFor = (s) => <Cell key={s.sid} slot={s} active={s.sid === activeSlotId} onClick={() => onSlotClick?.(s)} mini={mini} />
 
   return (
     <div className="relative mx-auto flex w-full flex-1 flex-col justify-center">
       <div className="relative aspect-square w-full">
-        {/* Box base layer */}
         {boxImgOk ? (
           <img
             src={asset('assets/box/box.png')} alt="" onError={() => setBoxImgOk(false)}
@@ -96,40 +129,31 @@ export default function BoxVisual({ box, bowOptions, paperOptions, activeSlotId,
           <div className="absolute inset-0 rounded-2xl border-[6px] border-[#caa15e]/50 bg-[#efe7d8] shadow-inner" />
         )}
 
-        {/* Filler color wash (multiply tint over the white paper) */}
         {paper && paper.color_hex.toLowerCase() !== '#ffffff' && (
-          <div
-            className={INNER + ' z-0 rounded-md mix-blend-multiply'}
-            style={{ background: paper.color_hex, opacity: 0.5 }}
-          />
+          <div className={INNER + ' z-0 rounded-md mix-blend-multiply'} style={{ background: paper.color_hex, opacity: 0.5 }} />
         )}
 
         <BowOverlay bow={bow} mini={mini} />
 
-        {/* Items: bottles row on top, snacks row below — separate rows, no overlap */}
-        <div className={INNER + ' z-10 flex flex-col justify-end gap-[4%] pb-[1%]'}>
+        {/* Items: bottles row on top, snacks row below — separate, never overlapping */}
+        <div className={INNER + ' z-10 flex flex-col justify-end gap-[4%] overflow-hidden pb-[1%]'} style={{ containerType: 'size' }}>
           {box.slots.length === 0 ? (
             mini ? null : (
-              <div className="flex h-full items-center justify-center text-center text-sm text-black/30">
+              <div className="flex h-full items-center justify-center text-center text-sm text-white/30">
                 Pick a template or add products →
               </div>
             )
           ) : (
             <>
-              {bottles.length > 0 && (
-                <div className="flex h-[64%] items-end justify-center gap-[3%]">{bottles.map(cell)}</div>
-              )}
-              {snacks.length > 0 && (
-                <div className="flex h-[24%] items-end justify-center gap-[3%]">{snacks.map(cell)}</div>
-              )}
+              <Row items={bottles} cap={CAP_BOTTLES} cellFor={cellFor} />
+              <Row items={snacks} cap={CAP_SNACKS} cellFor={cellFor} />
             </>
           )}
         </div>
 
-        {/* Live price badge */}
         {!mini && (
-          <div className="absolute bottom-[2%] left-[2%] z-30 rounded-full bg-wine px-3 py-1.5 text-sm font-semibold text-white shadow">
-            {eur(unitPrice)} <span className="font-normal opacity-70">/ box</span>
+          <div className="absolute bottom-[2%] left-[2%] z-30 rounded-full bg-cream px-3 py-1.5 text-sm font-semibold text-ink shadow">
+            {eur(unitPrice)} <span className="font-normal opacity-60">/ box</span>
           </div>
         )}
       </div>

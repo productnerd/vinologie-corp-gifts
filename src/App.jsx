@@ -14,15 +14,23 @@ export default function App() {
   const [data, setData] = useState(null)
   const [loadError, setLoadError] = useState(null)
 
-  const [box, setBox] = useState({ slots: [], bowId: null, paperId: null })
+  // box.locked = true when a template defines fixed slots (no extra adds allowed)
+  const [box, setBox] = useState({ slots: [], bowId: null, paperId: null, locked: false })
   const [activeSlotId, setActiveSlotId] = useState(null)
   const [basket, setBasket] = useState([])
   const [editingLineId, setEditingLineId] = useState(null)
   const [basketOpen, setBasketOpen] = useState(false)
   const [orderOpen, setOrderOpen] = useState(false)
   const [aiOpen, setAiOpen] = useState(false)
+  const [toast, setToast] = useState(null)
   const sidRef = useRef(1)
   const nextSid = () => sidRef.current++
+  const toastTimer = useRef()
+  const showToast = (msg) => {
+    setToast(msg)
+    clearTimeout(toastTimer.current)
+    toastTimer.current = setTimeout(() => setToast(null), 2800)
+  }
 
   // Load catalog
   useEffect(() => {
@@ -47,7 +55,7 @@ export default function App() {
       }
 
       setData({ categories: cats.data, productsByCat, productsById, templates: tmpls.data, bowOptions, paperOptions })
-      setBox({ slots: [], bowId: bowOptions[0]?.id ?? null, paperId: paperOptions[0]?.id ?? null })
+      setBox({ slots: [], bowId: bowOptions[0]?.id ?? null, paperId: paperOptions[0]?.id ?? null, locked: false })
     })()
   }, [])
 
@@ -61,12 +69,13 @@ export default function App() {
 
   // --- box editing ---
   function applyTemplate(t) {
-    if (!t) { setBox((b) => ({ ...b, slots: [] })); setActiveSlotId(null); return }
+    // null = "Custom": empty box, unlimited adds. A template = fixed, locked slots.
+    if (!t) { setBox((b) => ({ ...b, slots: [], locked: false })); setActiveSlotId(null); return }
     const slots = []
     for (const [accept, count] of Object.entries(t.slots)) {
       for (let i = 0; i < count; i++) slots.push({ sid: nextSid(), accept, product: null, fromTemplate: true })
     }
-    setBox((b) => ({ ...b, slots }))
+    setBox((b) => ({ ...b, slots, locked: true }))
     setActiveSlotId(null)
   }
 
@@ -79,17 +88,23 @@ export default function App() {
         slots.push({ sid: nextSid(), accept: product.category_id, product, fromTemplate: false })
       }
     }
-    setBox((b) => ({ ...b, slots }))
+    setBox((b) => ({ ...b, slots, locked: false }))
     setActiveSlotId(null)
     setAiOpen(false)
   }
 
+  const acceptLabel = (cat) => (cat === 'spirits' ? 'spirit' : cat === 'snacks' ? 'snack' : 'wine')
+
   function addProduct(p) {
+    const hasFreeSlot = box.slots.some((s) => !s.product && slotAccepts(s.accept, p.category_id))
+    // In a locked template, you can only fill existing slots — no extras.
+    if (box.locked && !hasFreeSlot) {
+      showToast(`This template has no free ${acceptLabel(p.category_id)} slot — switch to Custom to add more.`)
+      return
+    }
     setBox((b) => {
       const slots = [...b.slots]
-      // 1. active empty slot that accepts it
       let idx = slots.findIndex((s) => s.sid === activeSlotId && !s.product && slotAccepts(s.accept, p.category_id))
-      // 2. first empty slot that accepts it
       if (idx === -1) idx = slots.findIndex((s) => !s.product && slotAccepts(s.accept, p.category_id))
       if (idx !== -1) {
         slots[idx] = { ...slots[idx], product: p }
@@ -115,7 +130,7 @@ export default function App() {
     }
   }
 
-  const resetBox = () => setBox((b) => ({ slots: [], bowId: b.bowId, paperId: b.paperId }))
+  const resetBox = () => setBox((b) => ({ slots: [], bowId: b.bowId, paperId: b.paperId, locked: false }))
 
   // --- basket ---
   function addToBasket() {
@@ -167,27 +182,27 @@ export default function App() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center justify-between border-b border-black/10 bg-white px-6 py-4">
+      <header className="flex items-center justify-between border-b border-white/10 bg-panel px-6 py-4">
         <div className="flex items-baseline gap-2">
-          <span className="text-xl font-semibold tracking-tight text-wine">Vinologie</span>
-          <span className="text-sm text-black/50">Corporate Gift Boxes</span>
+          <span className="text-xl font-semibold tracking-tight text-cream">Vinologie</span>
+          <span className="text-sm text-cream/50">Corporate Gift Boxes</span>
         </div>
         <button
           onClick={() => setBasketOpen(true)}
-          className="relative rounded-full bg-wine px-4 py-2 text-sm font-medium text-white hover:bg-wine-dark"
+          className="relative rounded-full bg-cream px-4 py-2 text-sm font-medium text-ink hover:bg-white"
         >
           Basket
           {totals.boxCount > 0 && (
-            <span className="ml-2 rounded-full bg-white/25 px-2 py-0.5 text-xs">{totals.boxCount}</span>
+            <span className="ml-2 rounded-full bg-panel/25 px-2 py-0.5 text-xs">{totals.boxCount}</span>
           )}
         </button>
       </header>
 
       <main className="grid flex-1 grid-cols-1 gap-6 overflow-hidden p-6 lg:grid-cols-[minmax(0,440px)_1fr]">
         {/* LEFT */}
-        <section className="flex flex-col rounded-2xl border border-black/10 bg-white p-6 shadow-sm">
+        <section className="flex flex-col rounded-2xl border border-white/10 bg-panel p-6 shadow-sm">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-black/40">Your box</h2>
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-cream/40">Your box</h2>
             {editingLineId && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-700">Editing basket box</span>}
           </div>
           <div className="mt-4 flex flex-1 flex-col">
@@ -199,19 +214,19 @@ export default function App() {
           <button
             onClick={addToBasket}
             disabled={filledCount === 0}
-            className="mt-5 w-full rounded-full bg-wine py-3 font-semibold text-white hover:bg-wine-dark disabled:opacity-40"
+            className="mt-5 w-full rounded-full bg-cream py-3 font-semibold text-ink hover:bg-white disabled:opacity-40"
           >
             {editingLineId ? 'Update box in basket' : `Add box to basket · ${eur(unitPrice)}`}
           </button>
         </section>
 
         {/* RIGHT */}
-        <section className="overflow-y-auto rounded-2xl border border-black/10 bg-white p-6 shadow-sm">
+        <section className="overflow-y-auto rounded-2xl border border-white/10 bg-panel p-6 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-black/40">Assemble</h2>
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-cream/40">Assemble</h2>
             <button
               onClick={() => setAiOpen(true)}
-              className="rounded-full border border-wine/30 bg-gradient-to-r from-wine/5 to-gold/10 px-3 py-1.5 text-sm font-semibold text-wine hover:from-wine hover:to-wine hover:text-white"
+              className="rounded-full border border-gold/40 bg-gold/10 px-3 py-1.5 text-sm font-semibold text-gold transition hover:bg-gold hover:text-ink"
             >
               ✨ AI Somm
             </button>
@@ -238,10 +253,16 @@ export default function App() {
         <OrderForm totals={totals} onClose={() => setOrderOpen(false)} onSubmit={submitOrder} />
       )}
       {aiOpen && <AiAssistant onClose={() => setAiOpen(false)} onUse={applyAiBox} />}
+
+      {toast && (
+        <div className="pointer-events-none fixed left-1/2 top-6 z-[60] -translate-x-1/2 rounded-full bg-ink px-5 py-2.5 text-sm font-medium text-cream shadow-lg ring-1 ring-white/10">
+          {toast}
+        </div>
+      )}
     </div>
   )
 }
 
 function Centered({ children }) {
-  return <div className="flex h-full items-center justify-center text-black/50">{children}</div>
+  return <div className="flex h-full items-center justify-center text-cream/50">{children}</div>
 }
