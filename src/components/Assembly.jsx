@@ -50,46 +50,61 @@ function ScoreBar({ label, value }) {
 
 function ProductCard({ product, onAdd, wine }) {
   const hasScores = product.body != null
+  const [added, setAdded] = useState(false)
+  const handleClick = () => {
+    onAdd(product)
+    setAdded(true)
+    window.clearTimeout(handleClick._t)
+    handleClick._t = window.setTimeout(() => setAdded(false), 950)
+  }
   return (
     <button
-      onClick={() => onAdd(product)}
-      className="group relative flex w-full gap-3 rounded-xl border border-white/10 bg-panel p-2.5 text-left transition hover:border-cream/40 hover:bg-white/[0.04]"
+      onClick={handleClick}
+      className="cursor-add group relative flex w-full flex-col gap-2 overflow-hidden rounded-xl border border-white/10 bg-panel p-2.5 text-left transition hover:border-cream/40 hover:bg-white/[0.04]"
     >
       {product.popular && (
         <span className="absolute right-2 top-2 z-10 rounded-full bg-gold/20 px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-gold">
           ★ POPULAR
         </span>
       )}
-      {/* Wines: bare slender bottle at max height (no container). Snacks: in a tile. */}
-      {wine ? (
-        <div className="flex w-14 shrink-0 items-center justify-center">
-          <ProductThumb product={product} className="max-h-40 w-auto max-w-14 object-contain" />
-        </div>
-      ) : (
-        <div className="flex w-16 shrink-0 items-center justify-center rounded-lg bg-white/5 p-1">
-          <ProductThumb product={product} className="max-h-32 w-auto max-w-full object-contain" />
-        </div>
-      )}
-      <div className="flex min-w-0 flex-1 flex-col py-0.5">
-        <div className="pr-12 text-xs font-medium leading-snug text-cream/85">{product.name}</div>
-        {product.country && (
-          <div className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-cream/40">{product.country}</div>
-        )}
-        {product.description && (
-          <div className="mt-1 text-[10px] leading-snug text-cream/50 line-clamp-2">{product.description}</div>
-        )}
-        {hasScores && (
-          <div className="mt-2 flex flex-col gap-0.5">
-            <ScoreBar label="Body" value={product.body} />
-            <ScoreBar label="Acid" value={product.acidity} />
-            {product.tannin > 1 && <ScoreBar label="Tann" value={product.tannin} />}
-            <ScoreBar label="Swt" value={product.sweetness} />
+      {/* Name spans the full card width */}
+      <div className="pr-16 text-xs font-medium leading-snug text-cream/85">{product.name}</div>
+
+      <div className="flex flex-1 gap-3">
+        {/* Wines: bare slender bottle at max height. Snacks: in a tile. */}
+        {wine ? (
+          <div className="flex w-12 shrink-0 items-center justify-center">
+            <ProductThumb product={product} className="max-h-36 w-auto max-w-12 object-contain" />
+          </div>
+        ) : (
+          <div className="flex w-16 shrink-0 items-center justify-center rounded-lg bg-white/5 p-1">
+            <ProductThumb product={product} className="max-h-28 w-auto max-w-full object-contain" />
           </div>
         )}
-        <div className="mt-auto flex items-center justify-between pt-2">
-          <span className="text-xs font-semibold text-cream">{eur(product.price)}</span>
-          <span className="text-[10px] font-semibold text-gold opacity-0 transition group-hover:opacity-100">+ Add to box</span>
+        <div className="flex min-w-0 flex-1 flex-col">
+          {product.country && (
+            <div className="text-[10px] font-medium uppercase tracking-wide text-cream/40">{product.country}</div>
+          )}
+          {product.description && (
+            <div className="mt-1 text-[8px] leading-tight text-cream/45 line-clamp-2">{product.description}</div>
+          )}
+          {hasScores && (
+            <div className="mt-2 flex flex-col gap-0.5">
+              <ScoreBar label="Body" value={product.body} />
+              <ScoreBar label="Acid" value={product.acidity} />
+              {product.tannin > 1 && <ScoreBar label="Tann" value={product.tannin} />}
+              <ScoreBar label="Swt" value={product.sweetness} />
+            </div>
+          )}
         </div>
+      </div>
+
+      {/* Price, right-aligned */}
+      <div className="text-right text-sm font-semibold text-cream">{eur(product.price)}</div>
+
+      {/* Added confirmation flash */}
+      <div className={'pointer-events-none absolute inset-0 z-20 flex items-center justify-center gap-1.5 bg-gold/20 text-sm font-semibold text-gold backdrop-blur-[1px] transition-opacity duration-150 ' + (added ? 'opacity-100' : 'opacity-0')}>
+        ✓ Added to box
       </div>
     </button>
   )

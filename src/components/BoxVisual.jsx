@@ -6,8 +6,10 @@ const isTall = (accept) => accept === 'wine' || accept === 'red_wine' || accept 
 
 // Inner filler rectangle of the box image (where products rest).
 const INNER = 'absolute inset-x-[19%] top-[15%] bottom-[15%]'
-// A full wine bottle (display_scale 1.0) renders at this % of the box height.
-const UNIT = 56
+// Separate references so bottles fill most of the box height (less empty space
+// up top) while snacks stay small enough not to overflow the row below.
+const BOTTLE_UNIT = 66 // a full wine bottle (scale 1.0) → 66% of inner height
+const SNACK_UNIT = 40  // the biggest snack (scale ~0.78) → ~31%
 // Max items shown per row before collapsing the rest into a "+N more" pill.
 const CAP_BOTTLES = 6
 const CAP_SNACKS = 8
@@ -54,7 +56,7 @@ function BowOverlay({ bow, mini }) {
 function Cell({ slot, active, onClick, mini }) {
   const tall = isTall(slot.accept)
   const cell = `flex min-w-0 flex-1 items-end justify-center ${tall ? 'max-w-[24%]' : 'max-w-[22%]'}`
-  const h = { height: `${(scaleOf(slot) * UNIT).toFixed(1)}cqh` }
+  const h = { height: `${(scaleOf(slot) * (tall ? BOTTLE_UNIT : SNACK_UNIT)).toFixed(1)}cqh` }
 
   if (slot.product) {
     if (mini) return <div className={cell}><ProductImg product={slot.product} style={h} /></div>
@@ -72,7 +74,7 @@ function Cell({ slot, active, onClick, mini }) {
     <div className={cell}>
       <button
         onClick={onClick}
-        style={{ height: `${(tall ? 0.82 : 0.42) * UNIT}cqh` }}
+        style={{ height: `${tall ? 56 : 22}cqh` }}
         className={
           'flex w-full items-center justify-center rounded-lg border-2 border-dashed text-[9px] font-semibold uppercase tracking-wide transition ' +
           (active ? 'border-gold bg-gold/10 text-gold' : 'border-white/25 text-white/40 hover:border-white/50')
@@ -135,7 +137,7 @@ export default function BoxVisual({ box, bowOptions, paperOptions, activeSlotId,
         <BowOverlay bow={bow} mini={mini} />
 
         {/* Items: bottles row on top, snacks row below — separate, never overlapping */}
-        <div className={INNER + ' z-10 flex flex-col justify-end gap-[1.5cqh] overflow-hidden pb-[1%]'} style={{ containerType: 'size' }}>
+        <div className={INNER + ' z-10 flex flex-col justify-center gap-[1.5cqh] overflow-hidden'} style={{ containerType: 'size' }}>
           {box.slots.length === 0 ? (
             mini ? null : (
               <div className="flex h-full items-center justify-center text-center text-sm text-white/30">
