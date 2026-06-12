@@ -21,7 +21,10 @@ Single-page demo. React + Vite + Tailwind v4. Backend: Supabase **SeeHer** proje
 - [x] 7. Submit order → `vinologie_orders` (verified end-to-end, RLS anon insert OK)
 - [x] 8. AI assembler — Edge Function `vinologie-ai-box`, reuses existing ANTHROPIC_API_KEY
         secret, verified end-to-end in UI (brief → recommendation → Use this box)
-- [ ] 9. Deploy (GitHub Pages / Netlify — NOT Vercel)
+- [x] 9. Deployed to GitHub Pages → https://productnerd.github.io/vinologie-corp-gifts/
+        Repo: https://github.com/productnerd/vinologie-corp-gifts (push to main = auto-redeploy)
+        Asset paths go through Vite BASE_URL; Supabase public env injected in CI.
+        AI renamed to "AI Somm"; box now uses the transparent removebg image.
 
 ## Round 3 (visualization + AI polish) — DONE
 - [x] AI prompt: substitute CLOSEST available alternative for unavailable items (verified:

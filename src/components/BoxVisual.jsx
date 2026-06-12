@@ -41,35 +41,36 @@ function BowOverlay({ bow, mini }) {
   )
 }
 
-// One product or empty slot. Heights use container-query units (cqh/cqw) so they
-// resolve against the box, not the flex line — keeping wine tall and snacks ~1/3.
-function Slot({ slot, active, onClick, mini }) {
+// Each item lives in its own flex cell (flex-1, capped width) so cells sit side by
+// side with a gap and never overlap. The image fits inside its cell (object-contain),
+// so more items just shrink to fit the row instead of colliding.
+function Cell({ slot, active, onClick, mini }) {
   const tall = isTall(slot.accept)
-  const imgClass =
-    'w-auto object-contain object-bottom drop-shadow-lg ' +
-    (tall ? 'h-[80cqh] max-w-[26cqw] ' : 'h-[30cqh] max-w-[28cqw] ')
+  const cell = `flex h-full min-w-0 flex-1 items-end justify-center ${tall ? 'max-w-[24%]' : 'max-w-[22%]'}`
 
   if (slot.product) {
-    if (mini) return <ProductImg product={slot.product} className={imgClass} />
+    const img = (cls) => <ProductImg product={slot.product} className={'h-full w-full object-contain object-bottom drop-shadow-lg ' + cls} />
+    if (mini) return <div className={cell}>{img('')}</div>
     return (
-      <button onClick={onClick} className="group relative flex items-end" title={`${slot.product.name} — click to remove`}>
-        <ProductImg product={slot.product} className={imgClass + 'transition group-hover:-translate-y-1'} />
-        <span className="absolute -right-1 top-0 hidden h-5 w-5 items-center justify-center rounded-full bg-wine text-xs text-white group-hover:flex">×</span>
+      <button onClick={onClick} className={'group relative ' + cell} title={`${slot.product.name} — click to remove`}>
+        {img('transition group-hover:-translate-y-1')}
+        <span className="absolute right-0 top-0 hidden h-5 w-5 items-center justify-center rounded-full bg-wine text-xs text-white group-hover:flex">×</span>
       </button>
     )
   }
   if (mini) return null
   return (
-    <button
-      onClick={onClick}
-      className={
-        'flex items-center justify-center rounded-lg border-2 border-dashed text-[9px] font-semibold uppercase tracking-wide transition ' +
-        (active ? 'border-gold bg-gold/10 text-gold ' : 'border-black/25 text-black/30 hover:border-black/45 ') +
-        (tall ? 'h-[70cqh] w-[12cqw]' : 'h-[26cqh] w-[15cqw]')
-      }
-    >
-      {ACCEPT_LABEL[slot.accept] || 'Item'}
-    </button>
+    <div className={cell}>
+      <button
+        onClick={onClick}
+        className={
+          'flex h-[80%] w-full items-center justify-center rounded-lg border-2 border-dashed text-[9px] font-semibold uppercase tracking-wide transition ' +
+          (active ? 'border-gold bg-gold/10 text-gold' : 'border-black/25 text-black/30 hover:border-black/45')
+        }
+      >
+        {ACCEPT_LABEL[slot.accept] || 'Item'}
+      </button>
+    </div>
   )
 }
 
@@ -80,9 +81,7 @@ export default function BoxVisual({ box, bowOptions, paperOptions, activeSlotId,
   const bottles = box.slots.filter((s) => isTall(s.accept))
   const snacks = box.slots.filter((s) => !isTall(s.accept))
 
-  const renderSlot = (s) => (
-    <Slot key={s.sid} slot={s} active={s.sid === activeSlotId} onClick={() => onSlotClick?.(s)} mini={mini} />
-  )
+  const cell = (s) => <Cell key={s.sid} slot={s} active={s.sid === activeSlotId} onClick={() => onSlotClick?.(s)} mini={mini} />
 
   return (
     <div className="relative mx-auto flex w-full flex-1 flex-col justify-center">
@@ -107,8 +106,8 @@ export default function BoxVisual({ box, bowOptions, paperOptions, activeSlotId,
 
         <BowOverlay bow={bow} mini={mini} />
 
-        {/* Items: two bottom-anchored bands — bottles behind, snacks in front */}
-        <div className={INNER + ' overflow-hidden'} style={{ containerType: 'size' }}>
+        {/* Items: bottles row on top, snacks row below — separate rows, no overlap */}
+        <div className={INNER + ' z-10 flex flex-col justify-end gap-[4%] pb-[1%]'}>
           {box.slots.length === 0 ? (
             mini ? null : (
               <div className="flex h-full items-center justify-center text-center text-sm text-black/30">
@@ -118,14 +117,10 @@ export default function BoxVisual({ box, bowOptions, paperOptions, activeSlotId,
           ) : (
             <>
               {bottles.length > 0 && (
-                <div className="absolute inset-x-0 bottom-0 z-10 flex flex-wrap content-end items-end justify-center gap-x-1 gap-y-1">
-                  {bottles.map(renderSlot)}
-                </div>
+                <div className="flex h-[64%] items-end justify-center gap-[3%]">{bottles.map(cell)}</div>
               )}
               {snacks.length > 0 && (
-                <div className="absolute inset-x-[4%] bottom-0 z-20 flex flex-wrap content-end items-end justify-center gap-1">
-                  {snacks.map(renderSlot)}
-                </div>
+                <div className="flex h-[24%] items-end justify-center gap-[3%]">{snacks.map(cell)}</div>
               )}
             </>
           )}
