@@ -6,6 +6,7 @@ import Assembly from './components/Assembly'
 import BasketDrawer from './components/BasketDrawer'
 import OrderForm from './components/OrderForm'
 import AiAssistant from './components/AiAssistant'
+import ConfirmModal from './components/ConfirmModal'
 
 const slotAccepts = (accept, category) =>
   accept === 'wine' ? category === 'red_wine' || category === 'white_wine' : accept === category
@@ -23,6 +24,7 @@ export default function App() {
   const [orderOpen, setOrderOpen] = useState(false)
   const [aiOpen, setAiOpen] = useState(false)
   const [toast, setToast] = useState(null)
+  const [confirm, setConfirm] = useState(null) // { message, confirmLabel, onConfirm }
   const sidRef = useRef(1)
   const nextSid = () => sidRef.current++
   const toastTimer = useRef()
@@ -53,6 +55,8 @@ export default function App() {
         (productsByCat[p.category_id] ||= []).push(p)
         productsById[p.id] = p
       }
+      // Cheapest first within each category
+      for (const c of cats.data) productsByCat[c.id].sort((a, b) => Number(a.price) - Number(b.price))
 
       setData({ categories: cats.data, productsByCat, productsById, templates: tmpls.data, bowOptions, paperOptions })
       setBox({ slots: [], bowId: bowOptions[0]?.id ?? null, paperId: paperOptions[0]?.id ?? null, locked: false })
@@ -68,18 +72,60 @@ export default function App() {
   const filledCount = box.slots.filter((s) => s.product).length
 
   // --- box editing ---
-  function applyTemplate(t) {
-    // null = "Custom": empty box, unlimited adds. A template = fixed, locked slots.
-    if (!t) { setBox((b) => ({ ...b, slots: [], locked: false })); setActiveSlotId(null); return }
+  const templateSlots = (t) => {
     const slots = []
     for (const [accept, count] of Object.entries(t.slots)) {
       for (let i = 0; i < count; i++) slots.push({ sid: nextSid(), accept, product: null, fromTemplate: true })
+    }
+    return slots
+  }
+  // Place existing products into matching slots; return the ones that don't fit.
+  const placeProducts = (slots, products) => {
+    const remaining = [...products]
+    for (const s of slots) {
+      const idx = remaining.findIndex((p) => slotAccepts(s.accept, p.category_id))
+      if (idx !== -1) { s.product = remaining[idx]; remaining.splice(idx, 1) }
+    }
+    return remaining
+  }
+
+  function applyTemplate(t, force = false) {
+    const filled = box.slots.filter((s) => s.product).map((s) => s.product)
+    // "Custom" = unlimited slots — always keeps every product, just unlocks.
+    if (!t) {
+      setBox((b) => ({
+        ...b,
+        slots: filled.map((p) => ({ sid: nextSid(), accept: p.category_id, product: p, fromTemplate: false })),
+        locked: false,
+      }))
+      setActiveSlotId(null)
+      return
+    }
+    const slots = templateSlots(t)
+    const leftover = placeProducts(slots, filled)
+    // Smaller box than current selection → confirm before dropping the overflow.
+    if (leftover.length > 0 && !force) {
+      setConfirm({
+        message: `“${t.name}” has room for fewer items — ${leftover.length} of your chosen product${leftover.length > 1 ? 's' : ''} won’t fit and will be removed. Continue?`,
+        confirmLabel: 'Switch & remove',
+        onConfirm: () => { setConfirm(null); applyTemplate(t, true) },
+      })
+      return
     }
     setBox((b) => ({ ...b, slots, locked: true }))
     setActiveSlotId(null)
   }
 
-  function applyAiBox(items) {
+  function applyAiBox(items, force = false) {
+    // Replacing a non-empty box with an AI suggestion needs confirmation.
+    if (box.slots.some((s) => s.product) && !force) {
+      setConfirm({
+        message: 'Using this AI Somm box will replace your current selection. Continue?',
+        confirmLabel: 'Replace',
+        onConfirm: () => { setConfirm(null); applyAiBox(items, true) },
+      })
+      return
+    }
     const slots = []
     for (const it of items) {
       const product = data.productsById[it.id]
@@ -182,7 +228,7 @@ export default function App() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center justify-between border-b border-white/10 bg-panel px-6 py-4">
+      <header className="flex items-center justify-between border-b border-white/10 bg-panel px-8 py-5">
         <div className="flex items-baseline gap-2">
           <span className="text-xl font-semibold tracking-tight text-cream">Vinologie</span>
           <span className="text-sm text-cream/50">Corporate Gift Boxes</span>
@@ -198,9 +244,9 @@ export default function App() {
         </button>
       </header>
 
-      <main className="grid flex-1 grid-cols-1 gap-6 overflow-hidden p-6 lg:grid-cols-[minmax(0,440px)_1fr]">
+      <main className="grid flex-1 grid-cols-1 gap-8 overflow-hidden p-8 lg:grid-cols-[minmax(0,440px)_1fr]">
         {/* LEFT */}
-        <section className="flex flex-col rounded-2xl border border-white/10 bg-panel p-6 shadow-sm">
+        <section className="flex flex-col rounded-2xl border border-white/10 bg-panel p-8 shadow-sm">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-cream/40">Your box</h2>
             {editingLineId && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-700">Editing basket box</span>}
@@ -221,8 +267,8 @@ export default function App() {
         </section>
 
         {/* RIGHT */}
-        <section className="overflow-y-auto rounded-2xl border border-white/10 bg-panel p-6 shadow-sm">
-          <div className="mb-4 flex items-center justify-between">
+        <section className="overflow-y-auto rounded-2xl border border-white/10 bg-panel p-8 shadow-sm">
+          <div className="mb-6 flex items-center justify-between">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-cream/40">Assemble</h2>
             <button
               onClick={() => setAiOpen(true)}
@@ -253,6 +299,15 @@ export default function App() {
         <OrderForm totals={totals} onClose={() => setOrderOpen(false)} onSubmit={submitOrder} />
       )}
       {aiOpen && <AiAssistant onClose={() => setAiOpen(false)} onUse={applyAiBox} />}
+
+      {confirm && (
+        <ConfirmModal
+          message={confirm.message}
+          confirmLabel={confirm.confirmLabel}
+          onConfirm={confirm.onConfirm}
+          onCancel={() => setConfirm(null)}
+        />
+      )}
 
       {toast && (
         <div className="pointer-events-none fixed left-1/2 top-6 z-[60] -translate-x-1/2 rounded-full bg-ink px-5 py-2.5 text-sm font-medium text-cream shadow-lg ring-1 ring-white/10">
