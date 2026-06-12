@@ -100,7 +100,7 @@ function Row({ items, cap, cellFor }) {
   const shown = overflow ? items.slice(0, cap - 1) : items
   const more = overflow ? items.length - shown.length : 0
   return (
-    <div className="flex items-end justify-center gap-[3%]">
+    <div className="flex items-end justify-center gap-[2cqw]">
       {shown.map(cellFor)}
       {more > 0 && <MorePill n={more} />}
     </div>
@@ -135,7 +135,7 @@ export default function BoxVisual({ box, bowOptions, paperOptions, activeSlotId,
         <BowOverlay bow={bow} mini={mini} />
 
         {/* Items: bottles row on top, snacks row below — separate, never overlapping */}
-        <div className={INNER + ' z-10 flex flex-col justify-end gap-[4%] overflow-hidden pb-[1%]'} style={{ containerType: 'size' }}>
+        <div className={INNER + ' z-10 flex flex-col justify-end gap-[1.5cqh] overflow-hidden pb-[1%]'} style={{ containerType: 'size' }}>
           {box.slots.length === 0 ? (
             mini ? null : (
               <div className="flex h-full items-center justify-center text-center text-sm text-white/30">

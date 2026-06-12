@@ -60,10 +60,16 @@ function ProductCard({ product, onAdd, wine }) {
           ★ POPULAR
         </span>
       )}
-      {/* Slender bottle on the left, info on the right */}
-      <div className={'flex shrink-0 items-center justify-center rounded-lg bg-white/5 p-1 ' + (wine ? 'w-12' : 'w-16')}>
-        <ProductThumb product={product} className="max-h-32 w-auto max-w-full object-contain" />
-      </div>
+      {/* Wines: bare slender bottle at max height (no container). Snacks: in a tile. */}
+      {wine ? (
+        <div className="flex w-14 shrink-0 items-center justify-center">
+          <ProductThumb product={product} className="max-h-40 w-auto max-w-14 object-contain" />
+        </div>
+      ) : (
+        <div className="flex w-16 shrink-0 items-center justify-center rounded-lg bg-white/5 p-1">
+          <ProductThumb product={product} className="max-h-32 w-auto max-w-full object-contain" />
+        </div>
+      )}
       <div className="flex min-w-0 flex-1 flex-col py-0.5">
         <div className="pr-12 text-xs font-medium leading-snug text-cream/85">{product.name}</div>
         {product.country && (
@@ -108,7 +114,7 @@ export default function Assembly({
                 key={t.id}
                 onClick={() => onApplyTemplate(t)}
                 className={
-                  'rounded-full border px-3 py-1.5 text-sm font-medium transition ' +
+                  'rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition ' +
                   (active
                     ? 'border-cream bg-cream text-ink'
                     : 'border-cream/25 bg-cream/10 text-cream hover:bg-cream/20')
@@ -121,7 +127,7 @@ export default function Assembly({
           <button
             onClick={() => onApplyTemplate(null)}
             className={
-              'rounded-full border px-3 py-1.5 text-sm font-medium transition ' +
+              'rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition ' +
               (box.templateId === 'custom'
                 ? 'border-cream bg-cream text-ink'
                 : 'border-white/15 text-cream/50 hover:bg-white/5')
