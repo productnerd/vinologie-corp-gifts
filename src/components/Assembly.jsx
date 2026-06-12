@@ -35,23 +35,55 @@ function Swatches({ title, options, selectedId, onSelect }) {
   )
 }
 
-function ProductCard({ product, onAdd }) {
+function ScoreBar({ label, value }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="w-9 shrink-0 text-[9px] uppercase tracking-wide text-cream/40">{label}</span>
+      <div className="flex flex-1 gap-0.5">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <span key={i} className={'h-1 flex-1 rounded-full ' + (i <= value ? 'bg-gold' : 'bg-white/10')} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function ProductCard({ product, onAdd, wine }) {
+  const hasScores = product.body != null
   return (
     <button
       onClick={() => onAdd(product)}
-      className="group relative flex w-full items-stretch gap-3 rounded-xl border border-white/10 bg-panel p-2.5 text-left transition hover:border-cream/40 hover:bg-white/[0.04]"
+      className="group relative flex w-full gap-3 rounded-xl border border-white/10 bg-panel p-2.5 text-left transition hover:border-cream/40 hover:bg-white/[0.04]"
     >
-      {/* Tightly-cropped transparent product photo */}
-      <div className="flex w-16 shrink-0 items-center justify-center rounded-lg bg-white/5 p-1">
-        <ProductThumb product={product} className="h-20 w-full object-contain" />
-      </div>
-      <div className="flex min-w-0 flex-1 flex-col justify-center py-0.5">
-        <div className="text-xs font-medium leading-snug text-cream/80">{product.name}</div>
-        <div className="mt-0.5 text-xs font-semibold text-cream">{eur(product.price)}</div>
-        {/* Reserved space; reveals on hover so there's no layout shift */}
-        <span className="mt-1 text-[11px] font-semibold text-gold opacity-0 transition group-hover:opacity-100">
-          + Add to box
+      {product.popular && (
+        <span className="absolute right-2 top-2 z-10 rounded-full bg-gold/20 px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-gold">
+          ★ POPULAR
         </span>
+      )}
+      {/* Slender bottle on the left, info on the right */}
+      <div className={'flex shrink-0 items-center justify-center rounded-lg bg-white/5 p-1 ' + (wine ? 'w-12' : 'w-16')}>
+        <ProductThumb product={product} className="max-h-32 w-auto max-w-full object-contain" />
+      </div>
+      <div className="flex min-w-0 flex-1 flex-col py-0.5">
+        <div className="pr-12 text-xs font-medium leading-snug text-cream/85">{product.name}</div>
+        {product.country && (
+          <div className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-cream/40">{product.country}</div>
+        )}
+        {product.description && (
+          <div className="mt-1 text-[10px] leading-snug text-cream/50 line-clamp-2">{product.description}</div>
+        )}
+        {hasScores && (
+          <div className="mt-2 flex flex-col gap-0.5">
+            <ScoreBar label="Body" value={product.body} />
+            <ScoreBar label="Acid" value={product.acidity} />
+            {product.tannin > 1 && <ScoreBar label="Tann" value={product.tannin} />}
+            <ScoreBar label="Swt" value={product.sweetness} />
+          </div>
+        )}
+        <div className="mt-auto flex items-center justify-between pt-2">
+          <span className="text-xs font-semibold text-cream">{eur(product.price)}</span>
+          <span className="text-[10px] font-semibold text-gold opacity-0 transition group-hover:opacity-100">+ Add to box</span>
+        </div>
       </div>
     </button>
   )
@@ -111,6 +143,8 @@ export default function Assembly({
         {categories.map((cat) => {
           const items = productsByCat[cat.id] || []
           const open = openCat === cat.id
+          const wineLike = cat.id === 'red_wine' || cat.id === 'white_wine' || cat.id === 'spirits'
+          const gridCols = wineLike ? 'sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4' : 'sm:grid-cols-2'
           return (
             <div key={cat.id} className="rounded-xl border border-white/10">
               <button
@@ -121,9 +155,9 @@ export default function Assembly({
                 <span className="text-xs text-cream/40">{items.length} · {open ? '−' : '+'}</span>
               </button>
               {open && (
-                <div className="grid grid-cols-1 gap-3 px-4 pb-4 sm:grid-cols-2">
+                <div className={'grid grid-cols-1 gap-3 px-4 pb-4 ' + gridCols}>
                   {items.map((p) => (
-                    <ProductCard key={p.id} product={p} onAdd={onAddProduct} />
+                    <ProductCard key={p.id} product={p} onAdd={onAddProduct} wine={wineLike} />
                   ))}
                 </div>
               )}
