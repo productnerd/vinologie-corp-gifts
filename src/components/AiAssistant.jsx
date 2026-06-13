@@ -53,7 +53,7 @@ export default function AiAssistant({ brief, onBriefChange, onClose, onUse }) {
               </ul>
               <div className="flex items-center justify-between border-t border-white/10 px-4 py-3">
                 <span className="text-sm font-semibold text-cream/80">≈ {eur(result.estimatedPerBox)} / box</span>
-                <button onClick={() => onUse(result.box)} className="glow-cta rounded-full bg-cream px-4 py-2 text-sm font-semibold text-ink hover:bg-white">
+                <button onClick={() => onUse(result.box)} className="glow-cta rounded-full bg-cream px-4 py-2 text-sm font-semibold text-ink hover:bg-cream-bright">
                   Use this box
                 </button>
               </div>
@@ -71,7 +71,7 @@ export default function AiAssistant({ brief, onBriefChange, onClose, onUse }) {
             <button
               onClick={suggest}
               disabled={!brief.trim() || status === 'loading'}
-              className="glow-cta mt-3 w-full rounded-full bg-cream py-2.5 font-semibold text-ink hover:bg-white disabled:opacity-40 disabled:shadow-none"
+              className="glow-cta mt-3 w-full rounded-full bg-cream py-2.5 font-semibold text-ink hover:bg-cream-bright disabled:opacity-40 disabled:shadow-none"
             >
               {status === 'loading' ? 'Thinking…' : 'Suggest a box'}
             </button>

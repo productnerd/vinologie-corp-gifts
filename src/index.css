@@ -17,7 +17,8 @@
   --color-ink: #14100d;      /* page background */
   --color-panel: #1f1813;    /* cards / panels */
   --color-panel2: #2a211a;   /* inputs, subtle fills */
-  --color-cream: #f2ece1;    /* primary off-white accent + text */
+  --color-cream: #ece2cf;    /* warm beige accent + text (less pure white) */
+  --color-cream-bright: #f4ecda; /* gentle warm hover, not pure white */
   --color-gold: #c9a35e;     /* secondary accent */
   --color-wine: #7a2438;     /* retained for tiny removal accents */
   --color-wine-dark: #5a1828;
@@ -63,7 +64,10 @@ body {
   box-shadow: 0 0 0 1px rgba(201, 163, 94, 0.12), 0 8px 30px -8px rgba(201, 163, 94, 0.28);
 }
 
-/* Big "+" cursor over addable product cards. */
+/* Big "+" cursor over addable product cards; a tighter "pressed" plus on click. */
 .cursor-add {
   cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='34' height='34' viewBox='0 0 34 34'%3E%3Ccircle cx='17' cy='17' r='14' fill='%23c9a35e'/%3E%3Cpath d='M17 10v14M10 17h14' stroke='%23151210' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") 17 17, pointer;
+}
+.cursor-add:active {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 34 34'%3E%3Ccircle cx='17' cy='17' r='13' fill='%23e9c585' stroke='%23151210' stroke-width='2'/%3E%3Cpath d='M17 11v12M11 17h12' stroke='%23151210' stroke-width='3.5' stroke-linecap='round'/%3E%3C/svg%3E") 15 15, pointer;
 }

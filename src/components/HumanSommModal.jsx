@@ -16,7 +16,7 @@ export default function HumanSommModal({ onClose }) {
         </p>
         <a
           href={`tel:${PHONE_TEL}`}
-          className="glow-cta mt-5 flex items-center justify-center gap-2 rounded-full bg-cream py-3 font-display text-lg text-ink hover:bg-white"
+          className="glow-cta mt-5 flex items-center justify-center gap-2 rounded-full bg-cream py-3 font-display text-lg text-ink hover:bg-cream-bright"
         >
           📞 {PHONE_DISPLAY}
         </a>

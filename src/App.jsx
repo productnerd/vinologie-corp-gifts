@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from './lib/supabase'
-import { basketTotals, boxUnitPrice, eur } from './lib/pricing'
+import { basketTotals, boxUnitPrice, eur, WISH_PER_BOX } from './lib/pricing'
 import BoxVisual from './components/BoxVisual'
 import Assembly from './components/Assembly'
 import BasketDrawer from './components/BasketDrawer'
@@ -29,6 +29,7 @@ export default function App() {
   const [aiBrief, setAiBrief] = useState('') // persists the last AI Somm prompt
   const [toast, setToast] = useState(null)
   const [confirm, setConfirm] = useState(null) // { message, confirmLabel, onConfirm }
+  const [wish, setWish] = useState({ enabled: false, text: '', names: [] }) // custom card wish
   const sidRef = useRef(1)
   const nextSid = () => sidRef.current++
   const toastTimer = useRef()
@@ -71,7 +72,10 @@ export default function App() {
     () => ({ bowOptions: data?.bowOptions ?? [], paperOptions: data?.paperOptions ?? [] }),
     [data],
   )
-  const totals = useMemo(() => basketTotals(basket, opts), [basket, opts])
+  const totals = useMemo(
+    () => basketTotals(basket, opts, wish.enabled ? WISH_PER_BOX : 0),
+    [basket, opts, wish.enabled],
+  )
   const unitPrice = data ? boxUnitPrice(box, opts) : 0
   const filledCount = box.slots.filter((s) => s.product).length
 
@@ -222,10 +226,14 @@ export default function App() {
       subtotal: Number(totals.subtotal.toFixed(2)),
       discount_pct: totals.discountPct,
       total: Number(totals.total.toFixed(2)),
+      custom_wish: wish.enabled ? wish.text : null,
+      wish_names: wish.enabled && wish.names.length ? wish.names : null,
+      wish_cost: Number((totals.wishCost || 0).toFixed(2)),
     }
     const { error } = await supabase.from('vinologie_orders').insert(payload)
     if (error) throw error
     setBasket([])
+    setWish({ enabled: false, text: '', names: [] })
   }
 
   if (loadError) return <Centered>Failed to load catalog: {loadError}</Centered>
@@ -238,15 +246,15 @@ export default function App() {
           <span className="font-display text-2xl text-cream">Vinologie</span>
           <span className="text-sm text-cream/50">Corporate Gift Boxes</span>
         </div>
-        <button
-          onClick={() => setBasketOpen(true)}
-          className="glow-cta relative rounded-full bg-cream px-4 py-2 text-sm font-medium text-ink hover:bg-white"
-        >
-          Basket
-          {totals.boxCount > 0 && (
+        {totals.boxCount > 0 && (
+          <button
+            onClick={() => setBasketOpen(true)}
+            className="glow-cta relative rounded-full bg-cream px-4 py-2 text-sm font-medium text-ink hover:bg-cream-bright"
+          >
+            Basket
             <span className="ml-2 rounded-full bg-panel/25 px-2 py-0.5 text-xs">{totals.boxCount}</span>
-          )}
-        </button>
+          </button>
+        )}
       </header>
 
       {/* Mobile: assembling is easier on a bigger screen */}
@@ -270,7 +278,7 @@ export default function App() {
           <button
             onClick={addToBasket}
             disabled={filledCount === 0}
-            className="glow-cta mt-5 w-full rounded-full bg-cream py-3 font-semibold text-ink hover:bg-white disabled:opacity-40 disabled:shadow-none"
+            className="glow-cta mt-5 w-full rounded-full bg-cream py-3 font-semibold text-ink hover:bg-cream-bright disabled:opacity-40 disabled:shadow-none"
           >
             {editingLineId ? 'Update box in basket' : `Add box to basket · ${eur(unitPrice)}`}
           </button>
@@ -283,7 +291,7 @@ export default function App() {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setHumanOpen(true)}
-                className="rounded-full border border-white/15 px-3 py-1.5 text-sm font-medium text-cream/70 hover:bg-white/5"
+                className="rounded-full border border-white/15 px-3 py-1.5 text-sm font-medium text-cream/70 hover:bg-cream-bright/5"
               >
                 Talk to a human somm
               </button>
@@ -308,6 +316,7 @@ export default function App() {
       {basketOpen && (
         <BasketDrawer
           basket={basket} totals={totals} opts={opts}
+          wish={wish} setWish={setWish}
           onClose={() => setBasketOpen(false)}
           onQty={setQty} onEdit={editLine} onRemove={removeLine}
           onCheckout={() => { setBasketOpen(false); setOrderOpen(true) }}

@@ -41,12 +41,14 @@ function BowOverlay({ bow, mini }) {
     )
   }
   if (mini) return null
+  const h = bow.color_hex.replace('#', '')
+  const light = (0.299 * parseInt(h.slice(0, 2), 16) + 0.587 * parseInt(h.slice(2, 4), 16) + 0.114 * parseInt(h.slice(4, 6), 16)) > 150
   return (
     <span
-      className="pointer-events-none absolute right-[5%] top-[3%] z-30 rounded-full px-2 py-1 text-[10px] font-semibold text-white shadow"
+      className={'pointer-events-none absolute right-[5%] top-[3%] z-30 rounded-full px-2 py-1 text-[10px] font-semibold shadow ring-1 ring-black/10 ' + (light ? 'text-ink' : 'text-white')}
       style={{ background: bow.color_hex }}
     >
-      {bow.name}
+      {bow.name} bow
     </span>
   )
 }

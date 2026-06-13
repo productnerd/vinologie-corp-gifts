@@ -16,15 +16,18 @@ export function boxUnitPrice(box, { bowOptions, paperOptions }) {
   return products + bowFee + paperFee
 }
 
-export function basketTotals(basket, opts) {
+export const WISH_PER_BOX = 2
+
+export function basketTotals(basket, opts, wishPerBox = 0) {
   const boxCount = basket.reduce((n, line) => n + line.qty, 0)
   const subtotal = basket.reduce(
     (sum, line) => sum + boxUnitPrice(line.box, opts) * line.qty,
     0,
   )
   const discountPct = discountPctForBoxCount(boxCount)
-  const total = subtotal * (1 - discountPct / 100)
-  return { boxCount, subtotal, discountPct, total }
+  const wishCost = wishPerBox * boxCount
+  const total = subtotal * (1 - discountPct / 100) + wishCost
+  return { boxCount, subtotal, discountPct, wishCost, total }
 }
 
 export const eur = (n) =>

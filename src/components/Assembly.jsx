@@ -13,10 +13,13 @@ function ProductThumb({ product, className }) {
   )
 }
 
-function Swatches({ title, options, selectedId, onSelect }) {
+function Swatches({ title, note, options, selectedId, onSelect }) {
   return (
     <div>
-      <div className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-cream/40">{title}</div>
+      <div className="mb-1.5 flex items-baseline gap-1.5 text-xs font-semibold uppercase tracking-wide text-cream/40">
+        {title}
+        {note && <span className="font-medium normal-case tracking-normal text-gold">{note}</span>}
+      </div>
       <div className="flex flex-wrap gap-2">
         {options.map((o) => (
           <button
@@ -60,7 +63,7 @@ function ProductCard({ product, onAdd, wine }) {
   return (
     <button
       onClick={handleClick}
-      className="cursor-add group relative flex w-full flex-col gap-2 overflow-hidden rounded-xl border border-white/10 bg-panel p-2.5 text-left transition hover:border-cream/40 hover:bg-white/[0.04]"
+      className="cursor-add group relative flex w-full flex-col gap-2 overflow-hidden rounded-xl border border-white/10 bg-panel p-2.5 text-left transition hover:border-cream/40 hover:bg-cream-bright/[0.04]"
     >
       {product.popular && (
         <span className="absolute right-2 top-2 z-10 rounded-full bg-gold/20 px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-gold">
@@ -114,8 +117,6 @@ export default function Assembly({
   templates, categories, productsByCat, bowOptions, paperOptions,
   box, onApplyTemplate, onAddProduct, onSetBow, onSetPaper,
 }) {
-  const [openCat, setOpenCat] = useState(categories[0]?.id ?? null)
-
   return (
     <div className="flex flex-col gap-7">
       {/* Templates */}
@@ -145,7 +146,7 @@ export default function Assembly({
               'rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition ' +
               (box.templateId === 'custom'
                 ? 'border-cream bg-cream text-ink'
-                : 'border-white/15 text-cream/50 hover:bg-white/5')
+                : 'border-white/15 text-cream/50 hover:bg-cream-bright/5')
             }
           >
             Custom · unlimited
@@ -155,33 +156,27 @@ export default function Assembly({
 
       {/* Bow + filler paper colors */}
       <div className="flex flex-wrap gap-8">
-        <Swatches title="Bow color" options={bowOptions} selectedId={box.bowId} onSelect={onSetBow} />
-        <Swatches title="Filler paper color" options={paperOptions} selectedId={box.paperId} onSelect={onSetPaper} />
+        <Swatches title="Bow color" note="+€2.50 / colour" options={bowOptions} selectedId={box.bowId} onSelect={onSetBow} />
+        <Swatches title="Filler paper color" note="+€2.50 / colour" options={paperOptions} selectedId={box.paperId} onSelect={onSetPaper} />
       </div>
 
-      {/* Categories */}
-      <div className="flex flex-col gap-3">
+      {/* Categories — always expanded */}
+      <div className="flex flex-col gap-5">
         {categories.map((cat) => {
           const items = productsByCat[cat.id] || []
-          const open = openCat === cat.id
           const wineLike = cat.id === 'red_wine' || cat.id === 'white_wine' || cat.id === 'spirits'
           const gridCols = wineLike ? 'sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4' : 'sm:grid-cols-2'
           return (
-            <div key={cat.id} className="rounded-xl border border-white/10">
-              <button
-                onClick={() => setOpenCat(open ? null : cat.id)}
-                className="flex w-full items-center justify-between px-5 py-4 text-left"
-              >
-                <span className="font-semibold text-cream/80">{cat.name}</span>
-                <span className="text-xs text-cream/40">{items.length} · {open ? '−' : '+'}</span>
-              </button>
-              {open && (
-                <div className={'grid grid-cols-1 gap-3 px-4 pb-4 ' + gridCols}>
-                  {items.map((p) => (
-                    <ProductCard key={p.id} product={p} onAdd={onAddProduct} wine={wineLike} />
-                  ))}
-                </div>
-              )}
+            <div key={cat.id}>
+              <div className="mb-2 flex items-center justify-between border-b border-white/10 pb-2">
+                <span className="font-display text-base text-cream/85">{cat.name}</span>
+                <span className="text-xs text-cream/40">{items.length}</span>
+              </div>
+              <div className={'grid grid-cols-1 gap-3 ' + gridCols}>
+                {items.map((p) => (
+                  <ProductCard key={p.id} product={p} onAdd={onAddProduct} wine={wineLike} />
+                ))}
+              </div>
             </div>
           )
         })}

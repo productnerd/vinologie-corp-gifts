@@ -31,7 +31,7 @@ export default function OrderForm({ totals, onClose, onSubmit }) {
             <p className="mt-2 text-sm text-cream/60">
               Thank you! Our team will review your {totals.boxCount} boxes and call you shortly to confirm the details.
             </p>
-            <button onClick={onClose} className="mt-5 rounded-full bg-cream px-5 py-2 font-medium text-ink hover:bg-white">Close</button>
+            <button onClick={onClose} className="mt-5 rounded-full bg-cream px-5 py-2 font-medium text-ink hover:bg-cream-bright">Close</button>
           </div>
         ) : (
           <form onSubmit={submit}>
@@ -48,8 +48,8 @@ export default function OrderForm({ totals, onClose, onSubmit }) {
             </div>
             {status === 'error' && <p className="mt-2 text-sm text-red-600">Something went wrong. Please try again.</p>}
             <div className="mt-5 flex gap-2">
-              <button type="button" onClick={onClose} className="flex-1 rounded-full border border-white/15 py-2.5 font-medium text-cream/60 hover:bg-white/5">Cancel</button>
-              <button type="submit" disabled={!valid || status === 'sending'} className="flex-1 rounded-full bg-cream py-2.5 font-semibold text-ink hover:bg-white disabled:opacity-40">
+              <button type="button" onClick={onClose} className="flex-1 rounded-full border border-white/15 py-2.5 font-medium text-cream/60 hover:bg-cream-bright/5">Cancel</button>
+              <button type="submit" disabled={!valid || status === 'sending'} className="flex-1 rounded-full bg-cream py-2.5 font-semibold text-ink hover:bg-cream-bright disabled:opacity-40">
                 {status === 'sending' ? 'Sending…' : 'Place order'}
               </button>
             </div>
