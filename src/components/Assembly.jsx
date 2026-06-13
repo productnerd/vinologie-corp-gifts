@@ -179,8 +179,11 @@ export default function Assembly({
           const gridCols = sec.wineLike ? 'sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4' : 'sm:grid-cols-2'
           return (
             <div key={sec.key}>
-              <div className="mb-2 flex items-center justify-between border-b border-white/10 pb-2">
-                <span className="font-display text-base text-cream/85">{sec.name}</span>
+              <div className="mb-2 flex items-baseline justify-between border-b border-white/10 pb-2">
+                <span className="font-display text-base text-cream/85">
+                  {sec.name}
+                  {sec.note && <span className="ml-2 align-middle text-[10px] font-medium uppercase tracking-wide text-gold">· {sec.note}</span>}
+                </span>
                 <span className="text-xs text-cream/40">{sec.items.length}</span>
               </div>
               <div className={'grid grid-cols-1 gap-3 ' + gridCols}>

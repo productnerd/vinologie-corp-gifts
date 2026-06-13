@@ -2,10 +2,38 @@ import { useEffect, useState } from 'react'
 import { eur } from '../lib/pricing'
 import { celebrate } from '../lib/confetti'
 
-export default function OrderForm({ totals, onClose, onSubmit }) {
+// Torn-paper bottom edge for the receipt.
+const ZIGZAG =
+  'polygon(0 0,100% 0,100% 94%,96% 100%,92% 94%,88% 100%,84% 94%,80% 100%,76% 94%,72% 100%,68% 94%,64% 100%,60% 94%,56% 100%,52% 94%,48% 100%,44% 94%,40% 100%,36% 94%,32% 100%,28% 94%,24% 100%,20% 94%,16% 100%,12% 94%,8% 100%,4% 94%,0 100%)'
+
+function buildReceipt(basket, totals) {
+  const itemMap = {}
+  let productTotal = 0
+  for (const l of basket) {
+    for (const s of l.box.slots) {
+      if (!s.product) continue
+      const m = (itemMap[s.product.id] ||= { name: s.product.name, price: Number(s.product.price), qty: 0 })
+      m.qty += l.qty
+      productTotal += Number(s.product.price) * l.qty
+    }
+  }
+  return {
+    items: Object.values(itemMap),
+    coloursTotal: Math.max(0, totals.subtotal - productTotal),
+    subtotal: totals.subtotal,
+    discountPct: totals.discountPct,
+    discountAmt: totals.subtotal * (totals.discountPct / 100),
+    wishCost: totals.wishCost || 0,
+    total: totals.total,
+    vat: totals.total * (19 / 119),
+    boxCount: totals.boxCount,
+  }
+}
+
+export default function OrderForm({ totals, basket, wish, onClose, onSubmit }) {
   const [form, setForm] = useState({ company: '', customer_name: '', customer_email: '', customer_phone: '', notes: '' })
   const [status, setStatus] = useState('idle') // idle | sending | done | error
-  const [placed, setPlaced] = useState({ boxCount: 0, total: 0 }) // snapshot before the basket clears
+  const [receipt, setReceipt] = useState(null) // snapshot before the basket clears
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value })
 
   const valid = form.customer_name.trim() && /\S+@\S+\.\S+/.test(form.customer_email)
@@ -16,7 +44,7 @@ export default function OrderForm({ totals, onClose, onSubmit }) {
     e.preventDefault()
     if (!valid) return
     setStatus('sending')
-    setPlaced({ boxCount: totals.boxCount, total: totals.total })
+    setReceipt(buildReceipt(basket, totals))
     try {
       await onSubmit(form)
       setStatus('done')
@@ -28,15 +56,51 @@ export default function OrderForm({ totals, onClose, onSubmit }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="w-full max-w-md rounded-2xl bg-panel p-6 shadow-xl ring-1 ring-cream/15" onClick={(e) => e.stopPropagation()}>
-        {status === 'done' ? (
+      <div className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-2xl bg-panel p-6 shadow-xl ring-1 ring-cream/15" onClick={(e) => e.stopPropagation()}>
+        {status === 'done' && receipt ? (
           <div className="text-center">
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-green-500 text-2xl font-bold text-white shadow-lg shadow-green-500/30">✓</div>
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#228B22] text-2xl font-bold text-white shadow-lg shadow-[#228B22]/30">✓</div>
             <h2 className="font-display text-lg text-cream/85">Order received</h2>
             <p className="mt-2 text-sm text-cream/60">
-              Thank you! Our team will review your {placed.boxCount} box{placed.boxCount === 1 ? '' : 'es'} ({eur(placed.total)}) and call you shortly to confirm the details and address any custom requests.
+              Thank you! We'll call you shortly to confirm the details and address any custom requests.
             </p>
-            <p className="mt-4 text-xs text-cream/35">Tap anywhere outside to close.</p>
+
+            {/* Skeuomorphic paper receipt */}
+            <div className="mx-auto mt-5 max-w-[20rem] bg-[#f4eddd] px-5 pb-7 pt-5 text-left font-mono text-[#2a2118] shadow-[0_10px_30px_-10px_rgba(0,0,0,0.6)]" style={{ clipPath: ZIGZAG }}>
+              <div className="text-center">
+                <div className="font-display text-sm tracking-wide">TOP TIER ROOM</div>
+                <div className="text-[9px] uppercase tracking-[0.2em] text-[#2a2118]/55">Order receipt</div>
+                <div className="text-[9px] text-[#2a2118]/45">{new Date().toLocaleDateString('en-GB')} · {receipt.boxCount} box{receipt.boxCount === 1 ? '' : 'es'}</div>
+              </div>
+              <div className="my-3 border-t border-dashed border-[#2a2118]/30" />
+
+              {receipt.items.map((it, i) => (
+                <div key={i} className="mb-1.5 flex items-start justify-between gap-2 text-[11px]">
+                  <span className="min-w-0">
+                    <span className="font-semibold">{it.qty}×</span> {it.name}
+                    <span className="text-[#2a2118]/45"> @ {eur(it.price)}</span>
+                  </span>
+                  <span className="shrink-0">{eur(it.qty * it.price)}</span>
+                </div>
+              ))}
+              {receipt.coloursTotal > 0 && (
+                <div className="mb-1.5 flex justify-between text-[11px]"><span>Bow &amp; filler colours</span><span>{eur(receipt.coloursTotal)}</span></div>
+              )}
+              {receipt.wishCost > 0 && (
+                <div className="mb-1.5 flex justify-between text-[11px]"><span>Custom card wish</span><span>{eur(receipt.wishCost)}</span></div>
+              )}
+
+              <div className="my-3 border-t border-dashed border-[#2a2118]/30" />
+              <div className="flex justify-between text-[11px]"><span>Subtotal</span><span>{eur(receipt.subtotal + receipt.wishCost)}</span></div>
+              {receipt.discountPct > 0 && (
+                <div className="flex justify-between text-[11px] text-[#7a2438]"><span>Bulk discount ({receipt.discountPct}%)</span><span>−{eur(receipt.discountAmt)}</span></div>
+              )}
+              <div className="flex justify-between text-[11px] text-[#2a2118]/60"><span>incl. VAT (19%)</span><span>{eur(receipt.vat)}</span></div>
+              <div className="mt-1.5 flex justify-between border-t-2 border-[#2a2118]/40 pt-1.5 text-sm font-bold"><span>TOTAL</span><span>{eur(receipt.total)}</span></div>
+
+              <div className="mt-4 text-center text-[10px] tracking-wide text-[#2a2118]/60">★ Thank you for your order ★</div>
+              <div className="mt-1 text-center text-[13px] leading-none tracking-[0.15em] text-[#2a2118]/70">▌║▌║▌▌║▌║║▌║▌▌║▌</div>
+            </div>
           </div>
         ) : (
           <form onSubmit={submit}>

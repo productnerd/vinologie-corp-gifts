@@ -76,6 +76,7 @@ export default function App() {
         { key: 'red_wine', name: catName.red_wine, items: productsByCat.red_wine || [], bucket: 'wine', wineLike: true },
         { key: 'white_wine', name: catName.white_wine, items: productsByCat.white_wine || [], bucket: 'wine', wineLike: true },
         { key: 'spirits', name: catName.spirits, items: productsByCat.spirits || [], bucket: 'spirits', wineLike: true },
+        { key: 'cigars', name: 'Cigars', items: productsByCat.cigars || [], bucket: 'cigars', wineLike: false, note: 'Custom box only' },
         { key: 'snacks', name: 'Snacks', items: snk.filter((p) => !p.subgroup), bucket: 'snacks', wineLike: false },
         { key: 'coffee', name: 'Coffee', items: snk.filter((p) => p.subgroup === 'coffee'), bucket: 'snacks', wineLike: false },
         { key: 'tea', name: 'Tea', items: snk.filter((p) => p.subgroup === 'tea'), bucket: 'snacks', wineLike: false },
@@ -99,12 +100,14 @@ export default function App() {
   )
   // In a locked template, a category can only be added while it has a free slot.
   const addable = useMemo(() => {
-    if (!box.locked) return { wine: true, spirits: true, snacks: true }
+    // Custom (unlocked) box: anything goes. Cigars only ever exist in a custom box,
+    // since no template defines cigar slots.
+    if (!box.locked) return { wine: true, spirits: true, snacks: true, cigars: true }
     const hasFree = (bucket) =>
       box.slots.some((s) => !s.product && (bucket === 'wine'
         ? s.accept === 'wine' || s.accept === 'red_wine' || s.accept === 'white_wine'
         : s.accept === bucket))
-    return { wine: hasFree('wine'), spirits: hasFree('spirits'), snacks: hasFree('snacks') }
+    return { wine: hasFree('wine'), spirits: hasFree('spirits'), snacks: hasFree('snacks'), cigars: false }
   }, [box.slots, box.locked])
 
   // --- box editing ---
@@ -186,7 +189,7 @@ export default function App() {
     setAiOpen(true)
   }
 
-  const acceptLabel = (cat) => (cat === 'spirits' ? 'spirit' : cat === 'snacks' ? 'snack' : 'wine')
+  const acceptLabel = (cat) => (cat === 'spirits' ? 'spirit' : cat === 'snacks' ? 'snack' : cat === 'cigars' ? 'cigar' : 'wine')
 
   function addProduct(p) {
     const hasFreeSlot = box.slots.some((s) => !s.product && slotAccepts(s.accept, p.category_id))
@@ -350,7 +353,7 @@ export default function App() {
         />
       )}
       {orderOpen && (
-        <OrderForm totals={totals} onClose={() => setOrderOpen(false)} onSubmit={submitOrder} />
+        <OrderForm totals={totals} basket={basket} wish={wish} onClose={() => setOrderOpen(false)} onSubmit={submitOrder} />
       )}
       {aiOpen && aiResult && <AiAssistant result={aiResult} onClose={() => setAiOpen(false)} onUse={applyAiBox} />}
       {humanOpen && <HumanSommModal onClose={() => setHumanOpen(false)} />}

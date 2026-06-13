@@ -129,6 +129,8 @@ function WishSection({ wish, setWish, boxCount }) {
 }
 
 export default function BasketDrawer({ basket, totals, wish, setWish, onClose, onQty, onEdit, onRemove, onCheckout }) {
+  // A saved wish that references @name needs a recipient-names CSV before checkout.
+  const wishNeedsNames = wish.enabled && /@\w+/.test(wish.text || '') && (!wish.names || wish.names.length === 0)
   return (
     <div className="fixed inset-0 z-40 flex justify-end bg-black/40" onClick={onClose}>
       <div className="flex h-full w-full max-w-md flex-col bg-panel shadow-xl" onClick={(e) => e.stopPropagation()}>
@@ -205,8 +207,13 @@ export default function BasketDrawer({ basket, totals, wish, setWish, onClose, o
           {totals.discountPct === 0 && totals.boxCount > 0 && (
             <p className="mt-1 text-xs text-cream/40">Add {21 - totals.boxCount > 0 ? 21 - totals.boxCount : 1} more boxes for 5% off.</p>
           )}
+          {wishNeedsNames && (
+            <p className="mt-3 rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-xs leading-snug text-amber-200">
+              Your custom wish uses <span className="font-semibold">@name</span>, so we need the recipient names. Please upload a CSV in the wish above to continue.
+            </p>
+          )}
           <button
-            disabled={basket.length === 0}
+            disabled={basket.length === 0 || wishNeedsNames}
             onClick={onCheckout}
             className="mt-4 w-full rounded-full bg-cream py-3 font-semibold text-ink hover:bg-cream-bright disabled:opacity-40"
           >
