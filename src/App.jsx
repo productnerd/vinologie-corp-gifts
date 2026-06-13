@@ -68,8 +68,21 @@ export default function App() {
       // Cheapest first within each category
       for (const c of cats.data) productsByCat[c.id].sort((a, b) => Number(a.price) - Number(b.price))
 
+      // Display sections — snacks are split into Snacks / Coffee / Tea, but all keep
+      // the 'snacks' slot bucket so templates still treat them as snacks.
+      const catName = Object.fromEntries(cats.data.map((c) => [c.id, c.name]))
+      const snk = productsByCat['snacks'] || []
+      const sections = [
+        { key: 'red_wine', name: catName.red_wine, items: productsByCat.red_wine || [], bucket: 'wine', wineLike: true },
+        { key: 'white_wine', name: catName.white_wine, items: productsByCat.white_wine || [], bucket: 'wine', wineLike: true },
+        { key: 'spirits', name: catName.spirits, items: productsByCat.spirits || [], bucket: 'spirits', wineLike: true },
+        { key: 'snacks', name: 'Snacks', items: snk.filter((p) => !p.subgroup), bucket: 'snacks', wineLike: false },
+        { key: 'coffee', name: 'Coffee', items: snk.filter((p) => p.subgroup === 'coffee'), bucket: 'snacks', wineLike: false },
+        { key: 'tea', name: 'Tea', items: snk.filter((p) => p.subgroup === 'tea'), bucket: 'snacks', wineLike: false },
+      ].filter((s) => s.items.length > 0)
+
       const optObj = (o) => (o ? { id: o.id, hex: o.color_hex, surcharge: Number(o.surcharge) } : null)
-      setData({ categories: cats.data, productsByCat, productsById, templates: tmpls.data, bowOptions, paperOptions })
+      setData({ categories: cats.data, productsByCat, productsById, templates: tmpls.data, bowOptions, paperOptions, sections })
       setBox({ slots: [], bow: optObj(bowOptions[0]), paper: optObj(paperOptions[0]), locked: false, templateId: 'custom' })
     })()
   }, [])
@@ -266,20 +279,25 @@ export default function App() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex items-center justify-between border-b border-white/10 bg-panel px-8 py-5">
-        <div className="flex flex-col items-center gap-1">
-          <img src={asset('assets/logo/logo.png')} alt="Top Tier Room" className="h-6 w-auto max-w-[150px] object-contain" />
-          <span className="text-[11px] tracking-wide text-cream/50">Corporate gift boxes builder</span>
-        </div>
-        {totals.boxCount > 0 && (
+      <header className="flex items-center justify-between border-b border-white/10 bg-panel px-8 py-4">
+        <img src={asset('assets/logo/logo.png')} alt="Top Tier Room" className="h-9 w-auto max-w-[220px] object-contain" />
+        <div className="flex items-center gap-2">
           <button
-            onClick={() => setBasketOpen(true)}
-            className="glow-cta relative rounded-full bg-cream px-4 py-2 text-sm font-medium text-ink hover:bg-cream-bright"
+            onClick={() => setHumanOpen(true)}
+            className="rounded-full border border-white/15 px-3 py-1.5 text-sm font-medium text-cream/70 hover:bg-cream-bright/5"
           >
-            Basket
-            <span className="ml-2 rounded-full bg-panel/25 px-2 py-0.5 text-xs">{totals.boxCount}</span>
+            Talk to a human
           </button>
-        )}
+          {totals.boxCount > 0 && (
+            <button
+              onClick={() => setBasketOpen(true)}
+              className="glow-cta relative rounded-full bg-cream px-4 py-2 text-sm font-medium text-ink hover:bg-cream-bright"
+            >
+              Basket
+              <span className="ml-2 rounded-full bg-panel/25 px-2 py-0.5 text-xs">{totals.boxCount}</span>
+            </button>
+          )}
+        </div>
       </header>
 
       {/* Mobile: assembling is easier on a bigger screen */}
@@ -313,11 +331,11 @@ export default function App() {
         {/* RIGHT — assembly */}
         <section className="overflow-y-auto rounded-2xl border border-white/10 bg-panel p-6 shadow-sm sm:p-8">
           <Assembly
-            templates={data.templates} categories={data.categories} productsByCat={data.productsByCat}
+            templates={data.templates} sections={data.sections}
             box={box} addedIds={addedIds} addable={addable}
             onApplyTemplate={applyTemplate} onAddProduct={addProduct}
             aiBrief={aiBrief} onAiBriefChange={setAiBrief} onAiSend={runAiSomm}
-            aiLoading={aiLoading} aiError={aiError} onOpenHuman={() => setHumanOpen(true)}
+            aiLoading={aiLoading} aiError={aiError}
           />
         </section>
       </main>

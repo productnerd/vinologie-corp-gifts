@@ -109,14 +109,14 @@ const AI_PLACEHOLDER =
   "Tell me your budget & taste… e.g. “€45/box — 2 full-bodied Italian reds, a whisky, and an assortment of dark chocolate and a calming tea.”"
 
 export default function Assembly({
-  templates, categories, productsByCat,
+  templates, sections,
   box, addedIds, addable, onApplyTemplate, onAddProduct,
-  aiBrief, onAiBriefChange, onAiSend, aiLoading, aiError, onOpenHuman,
+  aiBrief, onAiBriefChange, onAiSend, aiLoading, aiError,
 }) {
   return (
     <div className="flex flex-col gap-7">
-      {/* AI Somm — inline prompt box */}
-      <div className="rounded-2xl border border-gold/40 bg-gradient-to-br from-gold/15 to-gold/5 p-3">
+      {/* AI Somm — label + textbox + send (no separate container) */}
+      <div>
         <div className="mb-1.5 font-display text-sm text-gold">✨ AI Somm</div>
         <div className="relative">
           <textarea
@@ -125,21 +125,18 @@ export default function Assembly({
             onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); onAiSend() } }}
             rows="3"
             placeholder={AI_PLACEHOLDER}
-            className="w-full resize-none rounded-lg border border-white/15 bg-panel2 p-2.5 pr-11 text-sm text-cream placeholder:text-cream/40"
+            className="w-full resize-none rounded-lg border border-white/15 bg-panel2 p-2.5 pb-12 text-sm text-cream placeholder:text-cream/40"
           />
           <button
             onClick={onAiSend}
             disabled={!aiBrief.trim() || aiLoading}
             title="Ask AI Somm"
-            className="glow-cta absolute bottom-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-gold text-base font-bold text-ink transition hover:brightness-110 disabled:opacity-40 disabled:shadow-none"
+            className="glow-cta absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-full bg-gold text-base font-bold text-ink transition hover:brightness-110 disabled:opacity-40 disabled:shadow-none"
           >
             {aiLoading ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-ink/30 border-t-ink" /> : '↑'}
           </button>
         </div>
         {aiError && <p className="mt-1.5 text-xs text-red-400">{aiError}</p>}
-        <button onClick={onOpenHuman} className="mt-2 text-xs text-cream/45 underline-offset-2 hover:text-cream hover:underline">
-          or talk to a human somm
-        </button>
       </div>
 
       {/* Templates */}
@@ -175,23 +172,20 @@ export default function Assembly({
         </div>
       </div>
 
-      {/* Categories — always expanded */}
+      {/* Sections — always expanded (snacks split into Snacks / Coffee / Tea) */}
       <div className="flex flex-col gap-5">
-        {categories.map((cat) => {
-          const items = productsByCat[cat.id] || []
-          const wineLike = cat.id === 'red_wine' || cat.id === 'white_wine' || cat.id === 'spirits'
-          const bucket = cat.id === 'spirits' ? 'spirits' : cat.id === 'snacks' ? 'snacks' : 'wine'
-          const blocked = addable ? !addable[bucket] : false
-          const gridCols = wineLike ? 'sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4' : 'sm:grid-cols-2'
+        {sections.map((sec) => {
+          const blocked = addable ? !addable[sec.bucket] : false
+          const gridCols = sec.wineLike ? 'sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4' : 'sm:grid-cols-2'
           return (
-            <div key={cat.id}>
+            <div key={sec.key}>
               <div className="mb-2 flex items-center justify-between border-b border-white/10 pb-2">
-                <span className="font-display text-base text-cream/85">{cat.name}</span>
-                <span className="text-xs text-cream/40">{items.length}</span>
+                <span className="font-display text-base text-cream/85">{sec.name}</span>
+                <span className="text-xs text-cream/40">{sec.items.length}</span>
               </div>
               <div className={'grid grid-cols-1 gap-3 ' + gridCols}>
-                {items.map((p) => (
-                  <ProductCard key={p.id} product={p} onAdd={onAddProduct} wine={wineLike} added={addedIds?.has(p.id)} blocked={blocked} />
+                {sec.items.map((p) => (
+                  <ProductCard key={p.id} product={p} onAdd={onAddProduct} wine={sec.wineLike} added={addedIds?.has(p.id)} blocked={blocked} />
                 ))}
               </div>
             </div>
