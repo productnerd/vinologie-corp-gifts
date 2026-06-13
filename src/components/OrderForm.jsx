@@ -7,23 +7,23 @@ const ZIGZAG =
   'polygon(0 0,100% 0,100% 94%,96% 100%,92% 94%,88% 100%,84% 94%,80% 100%,76% 94%,72% 100%,68% 94%,64% 100%,60% 94%,56% 100%,52% 94%,48% 100%,44% 94%,40% 100%,36% 94%,32% 100%,28% 94%,24% 100%,20% 94%,16% 100%,12% 94%,8% 100%,4% 94%,0 100%)'
 
 function buildReceipt(basket, totals) {
-  const itemMap = {}
-  let productTotal = 0
-  for (const l of basket) {
-    for (const s of l.box.slots) {
-      if (!s.product) continue
-      const m = (itemMap[s.product.id] ||= { name: s.product.name, price: Number(s.product.price), qty: 0 })
-      m.qty += l.qty
-      productTotal += Number(s.product.price) * l.qty
-    }
-  }
+  // One line per box (its pure product value), with surcharges split out separately.
+  const boxes = basket.map((l, i) => {
+    const pure = l.box.slots.reduce((s, sl) => s + (sl.product ? Number(sl.product.price) : 0), 0)
+    return { label: basket.length > 1 ? `Box ${i + 1}` : 'Gift box', qty: l.qty, unit: pure, line: pure * l.qty }
+  })
+  const pureTotal = boxes.reduce((s, b) => s + b.line, 0)
+  const bowTotal = basket.reduce((s, l) => s + (Number(l.box.bow?.surcharge) || 0) * l.qty, 0)
+  const paperTotal = basket.reduce((s, l) => s + (Number(l.box.paper?.surcharge) || 0) * l.qty, 0)
+  const wishCost = totals.wishCost || 0
   return {
-    items: Object.values(itemMap),
-    coloursTotal: Math.max(0, totals.subtotal - productTotal),
-    subtotal: totals.subtotal,
+    boxes,
+    bowTotal,
+    paperTotal,
+    wishCost,
+    subtotal: pureTotal + bowTotal + paperTotal + wishCost,
     discountPct: totals.discountPct,
     discountAmt: totals.subtotal * (totals.discountPct / 100),
-    wishCost: totals.wishCost || 0,
     total: totals.total,
     vat: totals.total * (19 / 119),
     boxCount: totals.boxCount,
@@ -74,24 +74,33 @@ export default function OrderForm({ totals, basket, wish, onClose, onSubmit }) {
               </div>
               <div className="my-3 border-t border-dashed border-[#2a2118]/30" />
 
-              {receipt.items.map((it, i) => (
+              {/* One line per box (pure value only) */}
+              {receipt.boxes.map((b, i) => (
                 <div key={i} className="mb-1.5 flex items-start justify-between gap-2 text-[11px]">
                   <span className="min-w-0">
-                    <span className="font-semibold">{it.qty}×</span> {it.name}
-                    <span className="text-[#2a2118]/45"> @ {eur(it.price)}</span>
+                    <span className="font-semibold">{b.qty}×</span> {b.label}
+                    <span className="text-[#2a2118]/45"> @ {eur(b.unit)}</span>
                   </span>
-                  <span className="shrink-0">{eur(it.qty * it.price)}</span>
+                  <span className="shrink-0">{eur(b.line)}</span>
                 </div>
               ))}
-              {receipt.coloursTotal > 0 && (
-                <div className="mb-1.5 flex justify-between text-[11px]"><span>Bow &amp; filler colours</span><span>{eur(receipt.coloursTotal)}</span></div>
+
+              {/* Surcharges, split out from the box value */}
+              {(receipt.bowTotal > 0 || receipt.paperTotal > 0 || receipt.wishCost > 0) && (
+                <div className="my-2 border-t border-dashed border-[#2a2118]/30" />
+              )}
+              {receipt.bowTotal > 0 && (
+                <div className="mb-1 flex justify-between text-[11px] text-[#2a2118]/75"><span>Bow colour</span><span>{eur(receipt.bowTotal)}</span></div>
+              )}
+              {receipt.paperTotal > 0 && (
+                <div className="mb-1 flex justify-between text-[11px] text-[#2a2118]/75"><span>Filler paper</span><span>{eur(receipt.paperTotal)}</span></div>
               )}
               {receipt.wishCost > 0 && (
-                <div className="mb-1.5 flex justify-between text-[11px]"><span>Custom card wish</span><span>{eur(receipt.wishCost)}</span></div>
+                <div className="mb-1 flex justify-between text-[11px] text-[#2a2118]/75"><span>Custom wish cards</span><span>{eur(receipt.wishCost)}</span></div>
               )}
 
               <div className="my-3 border-t border-dashed border-[#2a2118]/30" />
-              <div className="flex justify-between text-[11px]"><span>Subtotal</span><span>{eur(receipt.subtotal + receipt.wishCost)}</span></div>
+              <div className="flex justify-between text-[11px]"><span>Subtotal</span><span>{eur(receipt.subtotal)}</span></div>
               {receipt.discountPct > 0 && (
                 <div className="flex justify-between text-[11px] text-[#7a2438]"><span>Bulk discount ({receipt.discountPct}%)</span><span>−{eur(receipt.discountAmt)}</span></div>
               )}

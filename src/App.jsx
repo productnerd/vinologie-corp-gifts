@@ -239,6 +239,7 @@ export default function App() {
     }
     resetBox()
     setActiveSlotId(null)
+    setBasketOpen(true)
   }
 
   function editLine(id) {

@@ -160,6 +160,20 @@ export default function BasketDrawer({ basket, totals, wish, setWish, onClose, o
                     <div className="min-w-0 flex-1">
                       <div className="text-sm font-semibold text-cream/80">{eur(boxUnitPrice(line.box))} / box</div>
                       <div className="mt-0.5 line-clamp-3 text-xs text-cream/50">{boxSummary(line.box)}</div>
+                      <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-cream/45">
+                        {line.box.bow?.hex && (
+                          <span className="inline-flex items-center gap-1">
+                            <span className="h-3 w-3 rounded-full ring-1 ring-white/25" style={{ background: line.box.bow.hex }} />
+                            Bow{Number(line.box.bow.surcharge) > 0 ? ` (+${eur(line.box.bow.surcharge)})` : ''}
+                          </span>
+                        )}
+                        {line.box.paper?.hex && (
+                          <span className="inline-flex items-center gap-1">
+                            <span className="h-3 w-3 rounded-full ring-1 ring-white/25" style={{ background: line.box.paper.hex }} />
+                            Filler{Number(line.box.paper.surcharge) > 0 ? ` (+${eur(line.box.paper.surcharge)})` : ''}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="mt-3 flex items-center justify-between">
