@@ -318,7 +318,7 @@ export default function App() {
             <ColorPicker label="Filler paper" options={data.paperOptions} value={box.paper} onSelect={(paper) => setBox((b) => ({ ...b, paper }))} />
             {editingLineId && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-700">Editing basket box</span>}
           </div>
-          <div className="warm-glow mt-3 flex min-h-0 flex-1 flex-col overflow-y-auto">
+          <div className="warm-glow mt-3 flex min-h-0 flex-1 items-center justify-center overflow-hidden">
             <BoxVisual box={box} activeSlotId={activeSlotId} onSlotClick={onSlotClick} />
           </div>
           {/* Always-visible price + add button at the bottom of the box panel */}

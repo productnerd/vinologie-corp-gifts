@@ -95,8 +95,8 @@ export default function BoxVisual({ box, activeSlotId, onSlotClick, mini = false
   const cellFor = (s) => <Cell key={s.sid} slot={s} active={s.sid === activeSlotId} onClick={() => onSlotClick?.(s)} mini={mini} />
 
   return (
-    <div className="relative mx-auto flex w-full flex-1 flex-col justify-center">
-      <div className="relative aspect-square w-full">
+    <div className={mini ? 'relative w-full' : 'relative flex h-full w-full items-center justify-center'}>
+      <div className={'relative aspect-square w-full ' + (mini ? '' : 'max-h-full')}>
         {boxImgOk ? (
           <img
             src={asset('assets/box/box.png')} alt="" onError={() => setBoxImgOk(false)}

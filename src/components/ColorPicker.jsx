@@ -26,31 +26,31 @@ export default function ColorPicker({ label, options, value, onSelect }) {
 
   return (
     <div>
-      <div className="mb-1.5 flex items-baseline gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-cream/40">
+      <div className="mb-1 flex items-baseline gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-cream/40">
         {label}
         {nonDefault && <span className="font-medium normal-case tracking-normal text-gold">+€{COLOUR_SURCHARGE.toFixed(2)}</span>}
       </div>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-1.5">
         {options.map((o) => (
           <button
             key={o.id}
             onClick={() => pickOption(o)}
             title={o.name}
-            className={'h-7 w-7 rounded-full border transition ' + (value?.id === o.id ? 'ring-2 ring-gold ring-offset-2 ring-offset-panel' : 'border-white/15 hover:scale-110')}
+            className={'h-5 w-5 rounded-full border transition ' + (value?.id === o.id ? 'ring-2 ring-gold ring-offset-1 ring-offset-panel' : 'border-white/15 hover:scale-110')}
             style={{ background: o.color_hex }}
           />
         ))}
         {value?.id === 'custom' && (
           <button
             title="Custom colour"
-            className="h-7 w-7 rounded-full border ring-2 ring-gold ring-offset-2 ring-offset-panel"
+            className="h-5 w-5 rounded-full border ring-2 ring-gold ring-offset-1 ring-offset-panel"
             style={{ background: value.hex }}
           />
         )}
         <button
           onClick={() => setCustomOpen((v) => !v)}
           title="Add a custom colour (hex)"
-          className="flex h-7 w-7 items-center justify-center rounded-full border border-dashed border-cream/40 text-cream/60 transition hover:border-cream hover:text-cream"
+          className="flex h-5 w-5 items-center justify-center rounded-full border border-dashed border-cream/40 text-[11px] leading-none text-cream/60 transition hover:border-cream hover:text-cream"
         >
           +
         </button>
