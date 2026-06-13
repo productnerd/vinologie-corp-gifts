@@ -26,22 +26,32 @@ function ScoreBar({ label, value }) {
   )
 }
 
-function ProductCard({ product, onAdd, wine }) {
+function ProductCard({ product, onAdd, wine, added: inBox }) {
   const hasScores = product.body != null
-  const [added, setAdded] = useState(false)
+  const [flash, setFlash] = useState(false)
   const handleClick = () => {
     onAdd(product)
-    setAdded(true)
+    setFlash(true)
     window.clearTimeout(handleClick._t)
-    handleClick._t = window.setTimeout(() => setAdded(false), 950)
+    handleClick._t = window.setTimeout(() => setFlash(false), 950)
   }
   return (
     <button
       onClick={handleClick}
-      className="cursor-add group relative flex w-full flex-col gap-2 overflow-hidden rounded-xl border border-white/10 bg-panel p-2.5 text-left transition hover:border-cream/40 hover:bg-cream-bright/[0.04]"
+      className={
+        'cursor-add group relative flex w-full flex-col gap-2 overflow-hidden rounded-xl border p-2.5 text-left transition ' +
+        (inBox ? 'border-gold/70 bg-gold/[0.07] ring-1 ring-gold/40' : 'border-white/10 bg-panel hover:border-cream/40 hover:bg-cream-bright/[0.04]')
+      }
     >
+      {/* ADDED pill — top right when in the box */}
+      {inBox && (
+        <span className="absolute right-2 top-2 z-10 rounded-full bg-gold px-2 py-0.5 text-[9px] font-bold tracking-wide text-ink">
+          ADDED
+        </span>
+      )}
+      {/* Popular pill — top left, above the name */}
       {product.popular && (
-        <span className="absolute right-2 top-2 z-10 rounded-full bg-gold/20 px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-gold">
+        <span className="w-fit rounded-full bg-gold/20 px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-gold">
           ★ POPULAR
         </span>
       )}
@@ -81,22 +91,45 @@ function ProductCard({ product, onAdd, wine }) {
       <div className="text-right text-sm font-semibold text-cream">{eur(product.price)}</div>
 
       {/* Added confirmation flash */}
-      <div className={'pointer-events-none absolute inset-0 z-20 flex items-center justify-center gap-1.5 bg-gold/20 text-sm font-semibold text-gold backdrop-blur-[1px] transition-opacity duration-150 ' + (added ? 'opacity-100' : 'opacity-0')}>
+      <div className={'pointer-events-none absolute inset-0 z-20 flex items-center justify-center gap-1.5 bg-gold/20 text-sm font-semibold text-gold backdrop-blur-[1px] transition-opacity duration-150 ' + (flash ? 'opacity-100' : 'opacity-0')}>
         ✓ Added to box
       </div>
     </button>
   )
 }
 
+const SLOT_LABEL = { wine: 'wine', spirits: 'spirit', snacks: 'snack' }
+const describeSlots = (slots) =>
+  Object.entries(slots).map(([k, v]) => `${v} ${SLOT_LABEL[k] || k}${v > 1 ? 's' : ''}`).join(' · ')
+
 export default function Assembly({
   templates, categories, productsByCat,
-  box, onApplyTemplate, onAddProduct,
+  box, addedIds, onApplyTemplate, onAddProduct, onOpenAi, onOpenHuman,
 }) {
   return (
     <div className="flex flex-col gap-7">
+      {/* AI Somm — permanent box at the top */}
+      <div className="rounded-2xl border border-gold/40 bg-gradient-to-br from-gold/15 to-gold/5 p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="font-display text-base text-gold">✨ AI Somm</div>
+            <p className="mt-0.5 text-xs text-cream/55">Describe your budget &amp; taste — get a curated box in seconds.</p>
+          </div>
+          <button
+            onClick={onOpenAi}
+            className="glow-cta shrink-0 rounded-full bg-gold px-4 py-2 text-sm font-semibold text-ink transition hover:brightness-110"
+          >
+            Build with AI
+          </button>
+        </div>
+        <button onClick={onOpenHuman} className="mt-2 text-xs text-cream/45 underline-offset-2 hover:text-cream hover:underline">
+          or talk to a human somm
+        </button>
+      </div>
+
       {/* Templates */}
       <div>
-        <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-cream/40">Start from a template</div>
+        <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-cream/40">Start from a box size</div>
         <div className="flex flex-wrap gap-2">
           {templates.map((t) => {
             const active = box.templateId === t.id
@@ -105,26 +138,24 @@ export default function Assembly({
                 key={t.id}
                 onClick={() => onApplyTemplate(t)}
                 className={
-                  'rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition ' +
-                  (active
-                    ? 'border-cream bg-cream text-ink'
-                    : 'border-cream/25 bg-cream/10 text-cream hover:bg-cream/20')
+                  'flex flex-col items-start gap-0.5 rounded-xl border px-3.5 py-2 transition ' +
+                  (active ? 'border-cream bg-cream text-ink' : 'border-cream/25 bg-cream/10 text-cream hover:bg-cream/20')
                 }
               >
-                {t.name}
+                <span className="text-xs font-bold uppercase tracking-wide">{t.name}</span>
+                <span className={'text-[10px] ' + (active ? 'text-ink/60' : 'text-cream/45')}>{describeSlots(t.slots)}</span>
               </button>
             )
           })}
           <button
             onClick={() => onApplyTemplate(null)}
             className={
-              'rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition ' +
-              (box.templateId === 'custom'
-                ? 'border-cream bg-cream text-ink'
-                : 'border-white/15 text-cream/50 hover:bg-cream-bright/5')
+              'flex flex-col items-start gap-0.5 rounded-xl border px-3.5 py-2 transition ' +
+              (box.templateId === 'custom' ? 'border-cream bg-cream text-ink' : 'border-white/15 text-cream/50 hover:bg-cream-bright/5')
             }
           >
-            Custom · unlimited
+            <span className="text-xs font-bold uppercase tracking-wide">Custom</span>
+            <span className={'text-[10px] ' + (box.templateId === 'custom' ? 'text-ink/60' : 'text-cream/40')}>unlimited</span>
           </button>
         </div>
       </div>
@@ -143,7 +174,7 @@ export default function Assembly({
               </div>
               <div className={'grid grid-cols-1 gap-3 ' + gridCols}>
                 {items.map((p) => (
-                  <ProductCard key={p.id} product={p} onAdd={onAddProduct} wine={wineLike} />
+                  <ProductCard key={p.id} product={p} onAdd={onAddProduct} wine={wineLike} added={addedIds?.has(p.id)} />
                 ))}
               </div>
             </div>

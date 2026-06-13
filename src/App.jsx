@@ -9,6 +9,7 @@ import AiAssistant from './components/AiAssistant'
 import ConfirmModal from './components/ConfirmModal'
 import HumanSommModal from './components/HumanSommModal'
 import ColorPicker from './components/ColorPicker'
+import { asset } from './lib/asset'
 
 const slotAccepts = (accept, category) =>
   accept === 'wine' ? category === 'red_wine' || category === 'white_wine' : accept === category
@@ -76,6 +77,10 @@ export default function App() {
   )
   const unitPrice = data ? boxUnitPrice(box) : 0
   const filledCount = box.slots.filter((s) => s.product).length
+  const addedIds = useMemo(
+    () => new Set(box.slots.filter((s) => s.product).map((s) => s.product.id)),
+    [box.slots],
+  )
 
   // --- box editing ---
   const templateSlots = (t) => {
@@ -240,9 +245,9 @@ export default function App() {
   return (
     <div className="flex h-full flex-col">
       <header className="flex items-center justify-between border-b border-white/10 bg-panel px-8 py-5">
-        <div className="flex items-baseline gap-2.5">
-          <span className="font-display text-2xl text-cream">Vinologie</span>
-          <span className="text-sm text-cream/50">Corporate Gift Boxes</span>
+        <div className="flex flex-col gap-1">
+          <img src={asset('assets/logo/logo.png')} alt="Top Tier Room" className="h-8 w-auto" />
+          <span className="text-[11px] tracking-wide text-cream/50">Corporate gift boxes builder</span>
         </div>
         {totals.boxCount > 0 && (
           <button
@@ -284,29 +289,11 @@ export default function App() {
         <section className="overflow-y-auto rounded-2xl border border-white/10 bg-panel p-6 shadow-sm sm:p-8">
           <Assembly
             templates={data.templates} categories={data.categories} productsByCat={data.productsByCat}
-            box={box} onApplyTemplate={applyTemplate} onAddProduct={addProduct}
+            box={box} addedIds={addedIds} onApplyTemplate={applyTemplate} onAddProduct={addProduct}
+            onOpenAi={() => setAiOpen(true)} onOpenHuman={() => setHumanOpen(true)}
           />
         </section>
       </main>
-
-      {/* Floating "Talk to:" — AI Somm (left) + Human Somm (right) */}
-      <div className="fixed bottom-5 right-5 z-30 flex flex-col items-end gap-1.5">
-        <span className="pr-1 text-[11px] font-semibold uppercase tracking-wide text-cream/50">Talk to:</span>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setAiOpen(true)}
-            className="glow-cta rounded-full border border-gold/40 bg-gold/20 px-4 py-2 text-sm font-semibold text-gold shadow-lg transition hover:bg-gold hover:text-ink"
-          >
-            ✨ AI Somm
-          </button>
-          <button
-            onClick={() => setHumanOpen(true)}
-            className="rounded-full border border-white/15 bg-panel px-4 py-2 text-sm font-medium text-cream/80 shadow-lg transition hover:bg-cream-bright/10"
-          >
-            Human Somm
-          </button>
-        </div>
-      </div>
 
       {basketOpen && (
         <BasketDrawer

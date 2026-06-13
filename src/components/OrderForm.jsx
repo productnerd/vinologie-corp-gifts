@@ -1,17 +1,22 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { eur } from '../lib/pricing'
+import { celebrate } from '../lib/confetti'
 
 export default function OrderForm({ totals, onClose, onSubmit }) {
   const [form, setForm] = useState({ company: '', customer_name: '', customer_email: '', customer_phone: '', notes: '' })
   const [status, setStatus] = useState('idle') // idle | sending | done | error
+  const [placed, setPlaced] = useState({ boxCount: 0, total: 0 }) // snapshot before the basket clears
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value })
 
   const valid = form.customer_name.trim() && /\S+@\S+\.\S+/.test(form.customer_email)
+
+  useEffect(() => { if (status === 'done') celebrate() }, [status])
 
   const submit = async (e) => {
     e.preventDefault()
     if (!valid) return
     setStatus('sending')
+    setPlaced({ boxCount: totals.boxCount, total: totals.total })
     try {
       await onSubmit(form)
       setStatus('done')
@@ -29,7 +34,7 @@ export default function OrderForm({ totals, onClose, onSubmit }) {
             <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-2xl">✓</div>
             <h2 className="font-display text-lg text-cream/85">Order received</h2>
             <p className="mt-2 text-sm text-cream/60">
-              Thank you! Our team will review your {totals.boxCount} boxes and call you shortly to confirm the details.
+              Thank you! Our team will review your {placed.boxCount} box{placed.boxCount === 1 ? '' : 'es'} ({eur(placed.total)}) and call you shortly to confirm the details and address any custom requests.
             </p>
             <button onClick={onClose} className="mt-5 rounded-full bg-cream px-5 py-2 font-medium text-ink hover:bg-cream-bright">Close</button>
           </div>
