@@ -29,6 +29,9 @@ export default function App() {
   const [aiOpen, setAiOpen] = useState(false)
   const [humanOpen, setHumanOpen] = useState(false)
   const [aiBrief, setAiBrief] = useState('') // persists the last AI Somm prompt
+  const [aiResult, setAiResult] = useState(null)
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiError, setAiError] = useState('')
   const [toast, setToast] = useState(null)
   const [confirm, setConfirm] = useState(null) // { message, confirmLabel, onConfirm }
   const [wish, setWish] = useState({ enabled: false, text: '', names: [] }) // custom card wish
@@ -81,6 +84,15 @@ export default function App() {
     () => new Set(box.slots.filter((s) => s.product).map((s) => s.product.id)),
     [box.slots],
   )
+  // In a locked template, a category can only be added while it has a free slot.
+  const addable = useMemo(() => {
+    if (!box.locked) return { wine: true, spirits: true, snacks: true }
+    const hasFree = (bucket) =>
+      box.slots.some((s) => !s.product && (bucket === 'wine'
+        ? s.accept === 'wine' || s.accept === 'red_wine' || s.accept === 'white_wine'
+        : s.accept === bucket))
+    return { wine: hasFree('wine'), spirits: hasFree('spirits'), snacks: hasFree('snacks') }
+  }, [box.slots, box.locked])
 
   // --- box editing ---
   const templateSlots = (t) => {
@@ -149,6 +161,16 @@ export default function App() {
     setBox((b) => ({ ...b, slots, locked: false, templateId: 'custom' }))
     setActiveSlotId(null)
     setAiOpen(false)
+  }
+
+  async function runAiSomm() {
+    if (!aiBrief.trim() || aiLoading) return
+    setAiLoading(true); setAiError('')
+    const { data, error } = await supabase.functions.invoke('vinologie-ai-box', { body: { brief: aiBrief } })
+    setAiLoading(false)
+    if (error || data?.error) { setAiError(data?.error || error?.message || 'Something went wrong.'); return }
+    setAiResult(data)
+    setAiOpen(true)
   }
 
   const acceptLabel = (cat) => (cat === 'spirits' ? 'spirit' : cat === 'snacks' ? 'snack' : 'wine')
@@ -245,8 +267,8 @@ export default function App() {
   return (
     <div className="flex h-full flex-col">
       <header className="flex items-center justify-between border-b border-white/10 bg-panel px-8 py-5">
-        <div className="flex flex-col gap-1">
-          <img src={asset('assets/logo/logo.png')} alt="Top Tier Room" className="h-8 w-auto" />
+        <div className="flex flex-col items-center gap-1">
+          <img src={asset('assets/logo/logo.png')} alt="Top Tier Room" className="h-6 w-auto max-w-[150px] object-contain" />
           <span className="text-[11px] tracking-wide text-cream/50">Corporate gift boxes builder</span>
         </div>
         {totals.boxCount > 0 && (
@@ -267,21 +289,24 @@ export default function App() {
 
       <main className="grid flex-1 grid-cols-1 gap-8 overflow-y-auto p-6 sm:p-8 lg:grid-cols-[minmax(0,660px)_1fr] lg:overflow-hidden">
         {/* LEFT — box + colours (shown first, so it's on top on mobile) */}
-        <section className="flex flex-col rounded-2xl border border-white/10 bg-panel p-4 shadow-sm">
-          <div className="flex flex-wrap items-start justify-between gap-x-8 gap-y-3">
-            <ColorPicker label="Bow color" options={data.bowOptions} value={box.bow} onSelect={(bow) => setBox((b) => ({ ...b, bow }))} />
-            <ColorPicker label="Filler paper" options={data.paperOptions} value={box.paper} onSelect={(paper) => setBox((b) => ({ ...b, paper }))} />
-            {editingLineId && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-700">Editing basket box</span>}
+        <section className="flex min-h-0 flex-col rounded-2xl border border-white/10 bg-panel p-4 shadow-sm">
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+            <div className="flex flex-wrap items-start justify-between gap-x-8 gap-y-3">
+              <ColorPicker label="Bow color" options={data.bowOptions} value={box.bow} onSelect={(bow) => setBox((b) => ({ ...b, bow }))} />
+              <ColorPicker label="Filler paper" options={data.paperOptions} value={box.paper} onSelect={(paper) => setBox((b) => ({ ...b, paper }))} />
+              {editingLineId && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-700">Editing basket box</span>}
+            </div>
+            <div className="warm-glow mt-3 flex flex-col">
+              <BoxVisual box={box} activeSlotId={activeSlotId} onSlotClick={onSlotClick} />
+            </div>
           </div>
-          <div className="warm-glow mt-3 flex flex-1 flex-col">
-            <BoxVisual box={box} activeSlotId={activeSlotId} onSlotClick={onSlotClick} />
-          </div>
+          {/* Always-visible price + add button at the bottom of the box panel */}
           <button
             onClick={addToBasket}
             disabled={filledCount === 0}
-            className="glow-cta mt-4 w-full rounded-full bg-cream py-3 font-semibold text-ink hover:bg-cream-bright disabled:opacity-40 disabled:shadow-none"
+            className="glow-cta mt-3 w-full rounded-full bg-cream py-3 font-semibold text-ink hover:bg-cream-bright disabled:opacity-40 disabled:shadow-none"
           >
-            {editingLineId ? 'Update box in basket' : `Add box to basket · ${eur(unitPrice)}`}
+            {editingLineId ? `Update box · ${eur(unitPrice)}` : `Add box to basket · ${eur(unitPrice)}`}
           </button>
         </section>
 
@@ -289,8 +314,10 @@ export default function App() {
         <section className="overflow-y-auto rounded-2xl border border-white/10 bg-panel p-6 shadow-sm sm:p-8">
           <Assembly
             templates={data.templates} categories={data.categories} productsByCat={data.productsByCat}
-            box={box} addedIds={addedIds} onApplyTemplate={applyTemplate} onAddProduct={addProduct}
-            onOpenAi={() => setAiOpen(true)} onOpenHuman={() => setHumanOpen(true)}
+            box={box} addedIds={addedIds} addable={addable}
+            onApplyTemplate={applyTemplate} onAddProduct={addProduct}
+            aiBrief={aiBrief} onAiBriefChange={setAiBrief} onAiSend={runAiSomm}
+            aiLoading={aiLoading} aiError={aiError} onOpenHuman={() => setHumanOpen(true)}
           />
         </section>
       </main>
@@ -307,7 +334,7 @@ export default function App() {
       {orderOpen && (
         <OrderForm totals={totals} onClose={() => setOrderOpen(false)} onSubmit={submitOrder} />
       )}
-      {aiOpen && <AiAssistant brief={aiBrief} onBriefChange={setAiBrief} onClose={() => setAiOpen(false)} onUse={applyAiBox} />}
+      {aiOpen && aiResult && <AiAssistant result={aiResult} onClose={() => setAiOpen(false)} onUse={applyAiBox} />}
       {humanOpen && <HumanSommModal onClose={() => setHumanOpen(false)} />}
 
       {confirm && (

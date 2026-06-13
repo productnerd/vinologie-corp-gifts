@@ -28,15 +28,15 @@ export default function OrderForm({ totals, onClose, onSubmit }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="w-full max-w-md rounded-2xl bg-panel p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+      <div className="w-full max-w-md rounded-2xl bg-panel p-6 shadow-xl ring-1 ring-cream/15" onClick={(e) => e.stopPropagation()}>
         {status === 'done' ? (
           <div className="text-center">
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-2xl">✓</div>
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-green-500 text-2xl font-bold text-white shadow-lg shadow-green-500/30">✓</div>
             <h2 className="font-display text-lg text-cream/85">Order received</h2>
             <p className="mt-2 text-sm text-cream/60">
               Thank you! Our team will review your {placed.boxCount} box{placed.boxCount === 1 ? '' : 'es'} ({eur(placed.total)}) and call you shortly to confirm the details and address any custom requests.
             </p>
-            <button onClick={onClose} className="mt-5 rounded-full bg-cream px-5 py-2 font-medium text-ink hover:bg-cream-bright">Close</button>
+            <p className="mt-4 text-xs text-cream/35">Tap anywhere outside to close.</p>
           </div>
         ) : (
           <form onSubmit={submit}>

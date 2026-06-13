@@ -26,22 +26,25 @@ function ScoreBar({ label, value }) {
   )
 }
 
-function ProductCard({ product, onAdd, wine, added: inBox }) {
+function ProductCard({ product, onAdd, wine, added: inBox, blocked }) {
   const hasScores = product.body != null
   const [flash, setFlash] = useState(false)
   const handleClick = () => {
     onAdd(product)
+    if (blocked) return
     setFlash(true)
     window.clearTimeout(handleClick._t)
     handleClick._t = window.setTimeout(() => setFlash(false), 950)
   }
+  const state = inBox
+    ? 'cursor-add border-gold/70 bg-gold/[0.07] ring-1 ring-gold/40'
+    : blocked
+      ? 'cursor-block border-white/10 bg-panel opacity-50'
+      : 'cursor-add border-white/10 bg-panel hover:border-cream/40 hover:bg-cream-bright/[0.04]'
   return (
     <button
       onClick={handleClick}
-      className={
-        'cursor-add group relative flex w-full flex-col gap-2 overflow-hidden rounded-xl border p-2.5 text-left transition ' +
-        (inBox ? 'border-gold/70 bg-gold/[0.07] ring-1 ring-gold/40' : 'border-white/10 bg-panel hover:border-cream/40 hover:bg-cream-bright/[0.04]')
-      }
+      className={'group relative flex w-full flex-col gap-2 overflow-hidden rounded-xl border p-2.5 text-left transition ' + state + (blocked ? ' cursor-block' : '')}
     >
       {/* ADDED pill — top right when in the box */}
       {inBox && (
@@ -102,26 +105,38 @@ const SLOT_LABEL = { wine: 'wine', spirits: 'spirit', snacks: 'snack' }
 const describeSlots = (slots) =>
   Object.entries(slots).map(([k, v]) => `${v} ${SLOT_LABEL[k] || k}${v > 1 ? 's' : ''}`).join(' · ')
 
+const AI_PLACEHOLDER =
+  "Tell me your budget & taste… e.g. “€45/box — 2 full-bodied Italian reds, a whisky, and an assortment of dark chocolate and a calming tea.”"
+
 export default function Assembly({
   templates, categories, productsByCat,
-  box, addedIds, onApplyTemplate, onAddProduct, onOpenAi, onOpenHuman,
+  box, addedIds, addable, onApplyTemplate, onAddProduct,
+  aiBrief, onAiBriefChange, onAiSend, aiLoading, aiError, onOpenHuman,
 }) {
   return (
     <div className="flex flex-col gap-7">
-      {/* AI Somm — permanent box at the top */}
-      <div className="rounded-2xl border border-gold/40 bg-gradient-to-br from-gold/15 to-gold/5 p-4">
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <div className="font-display text-base text-gold">✨ AI Somm</div>
-            <p className="mt-0.5 text-xs text-cream/55">Describe your budget &amp; taste — get a curated box in seconds.</p>
-          </div>
+      {/* AI Somm — inline prompt box */}
+      <div className="rounded-2xl border border-gold/40 bg-gradient-to-br from-gold/15 to-gold/5 p-3">
+        <div className="mb-1.5 font-display text-sm text-gold">✨ AI Somm</div>
+        <div className="relative">
+          <textarea
+            value={aiBrief}
+            onChange={(e) => onAiBriefChange(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); onAiSend() } }}
+            rows="3"
+            placeholder={AI_PLACEHOLDER}
+            className="w-full resize-none rounded-lg border border-white/15 bg-panel2 p-2.5 pr-11 text-sm text-cream placeholder:text-cream/40"
+          />
           <button
-            onClick={onOpenAi}
-            className="glow-cta shrink-0 rounded-full bg-gold px-4 py-2 text-sm font-semibold text-ink transition hover:brightness-110"
+            onClick={onAiSend}
+            disabled={!aiBrief.trim() || aiLoading}
+            title="Ask AI Somm"
+            className="glow-cta absolute bottom-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-gold text-base font-bold text-ink transition hover:brightness-110 disabled:opacity-40 disabled:shadow-none"
           >
-            Build with AI
+            {aiLoading ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-ink/30 border-t-ink" /> : '↑'}
           </button>
         </div>
+        {aiError && <p className="mt-1.5 text-xs text-red-400">{aiError}</p>}
         <button onClick={onOpenHuman} className="mt-2 text-xs text-cream/45 underline-offset-2 hover:text-cream hover:underline">
           or talk to a human somm
         </button>
@@ -165,6 +180,8 @@ export default function Assembly({
         {categories.map((cat) => {
           const items = productsByCat[cat.id] || []
           const wineLike = cat.id === 'red_wine' || cat.id === 'white_wine' || cat.id === 'spirits'
+          const bucket = cat.id === 'spirits' ? 'spirits' : cat.id === 'snacks' ? 'snacks' : 'wine'
+          const blocked = addable ? !addable[bucket] : false
           const gridCols = wineLike ? 'sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4' : 'sm:grid-cols-2'
           return (
             <div key={cat.id}>
@@ -174,7 +191,7 @@ export default function Assembly({
               </div>
               <div className={'grid grid-cols-1 gap-3 ' + gridCols}>
                 {items.map((p) => (
-                  <ProductCard key={p.id} product={p} onAdd={onAddProduct} wine={wineLike} added={addedIds?.has(p.id)} />
+                  <ProductCard key={p.id} product={p} onAdd={onAddProduct} wine={wineLike} added={addedIds?.has(p.id)} blocked={blocked} />
                 ))}
               </div>
             </div>
