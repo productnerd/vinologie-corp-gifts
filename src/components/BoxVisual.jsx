@@ -112,13 +112,7 @@ export default function BoxVisual({ box, activeSlotId, onSlotClick, mini = false
 
         {/* Items: bottles row on top, snacks row below — separate, never overlapping */}
         <div className={INNER + ' z-10 flex flex-col justify-center gap-[1.5cqh] overflow-hidden'} style={{ containerType: 'size' }}>
-          {box.slots.length === 0 ? (
-            mini ? null : (
-              <div className="flex h-full items-center justify-center text-center text-sm text-white/30">
-                Pick a template or add products →
-              </div>
-            )
-          ) : (
+          {box.slots.length > 0 && (
             <>
               <Row items={bottles} cap={CAP_BOTTLES} cellFor={cellFor} />
               <Row items={snacks} cap={CAP_SNACKS} cellFor={cellFor} />

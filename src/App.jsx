@@ -310,16 +310,15 @@ export default function App() {
 
       <main className="grid flex-1 grid-cols-1 gap-8 overflow-y-auto p-6 sm:p-8 lg:grid-cols-[minmax(0,660px)_1fr] lg:overflow-hidden">
         {/* LEFT — box + colours (shown first, so it's on top on mobile) */}
-        <section className="flex min-h-0 flex-col rounded-2xl border border-white/10 bg-panel p-4 shadow-sm">
-          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-            <div className="flex flex-wrap items-start justify-between gap-x-8 gap-y-3">
-              <ColorPicker label="Bow color" options={data.bowOptions} value={box.bow} onSelect={(bow) => setBox((b) => ({ ...b, bow }))} />
-              <ColorPicker label="Filler paper" options={data.paperOptions} value={box.paper} onSelect={(paper) => setBox((b) => ({ ...b, paper }))} />
-              {editingLineId && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-700">Editing basket box</span>}
-            </div>
-            <div className="warm-glow mt-3 flex flex-col">
-              <BoxVisual box={box} activeSlotId={activeSlotId} onSlotClick={onSlotClick} />
-            </div>
+        <section className="flex min-h-0 flex-col rounded-2xl border border-white/10 bg-panel px-2 py-4 shadow-sm">
+          {/* Colour pickers live outside the scroll area so the selected swatch's ring isn't clipped */}
+          <div className="flex flex-wrap items-start justify-between gap-x-8 gap-y-3 px-1">
+            <ColorPicker label="Bow color" options={data.bowOptions} value={box.bow} onSelect={(bow) => setBox((b) => ({ ...b, bow }))} />
+            <ColorPicker label="Filler paper" options={data.paperOptions} value={box.paper} onSelect={(paper) => setBox((b) => ({ ...b, paper }))} />
+            {editingLineId && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-700">Editing basket box</span>}
+          </div>
+          <div className="warm-glow mt-3 flex min-h-0 flex-1 flex-col overflow-y-auto">
+            <BoxVisual box={box} activeSlotId={activeSlotId} onSlotClick={onSlotClick} />
           </div>
           {/* Always-visible price + add button at the bottom of the box panel */}
           <button
