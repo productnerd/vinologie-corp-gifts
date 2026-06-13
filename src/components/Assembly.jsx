@@ -64,8 +64,8 @@ function ProductCard({ product, onAdd, wine, added: inBox, blocked }) {
       <div className="flex flex-1 gap-3">
         {/* Wines: bare slender bottle at max height. Snacks: in a tile. */}
         {wine ? (
-          <div className="flex w-12 shrink-0 items-center justify-center">
-            <ProductThumb product={product} className="max-h-36 w-auto max-w-12 object-contain" />
+          <div className="flex w-16 shrink-0 items-center justify-center">
+            <ProductThumb product={product} className="max-h-44 w-auto max-w-16 object-contain" />
           </div>
         ) : (
           <div className="flex w-16 shrink-0 items-center justify-center rounded-lg bg-white/5 p-1">
