@@ -6,7 +6,7 @@ export default function AiAssistant({ result, onClose, onUse }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
       <div className="flex max-h-[90vh] w-full max-w-lg flex-col rounded-2xl bg-panel p-6 shadow-xl ring-1 ring-gold/30" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <h2 className="font-display text-lg text-cream">✨ AI Somm suggests</h2>
+          <h2 className="font-display text-lg text-cream">AI Somm suggests</h2>
           <button onClick={onClose} className="text-2xl leading-none text-cream/40 hover:text-cream/70">×</button>
         </div>
 

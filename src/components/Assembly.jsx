@@ -117,7 +117,7 @@ export default function Assembly({
     <div className="flex flex-col gap-7">
       {/* AI Somm — label + textbox + send (no separate container) */}
       <div>
-        <div className="mb-1.5 font-display text-sm text-gold">✨ AI Somm</div>
+        <div className="mb-1.5 font-display text-sm text-gold">AI Somm</div>
         <div className="relative">
           <textarea
             value={aiBrief}
