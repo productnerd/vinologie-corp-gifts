@@ -322,7 +322,7 @@ export default function App() {
           <button
             onClick={addToBasket}
             disabled={filledCount === 0}
-            className="glow-cta mt-3 w-full rounded-full bg-cream py-3 font-semibold text-ink hover:bg-cream-bright disabled:opacity-40 disabled:shadow-none"
+            className="mt-3 w-full rounded-full border border-cream/30 py-2 text-sm font-medium text-cream/90 transition hover:bg-cream hover:text-ink disabled:opacity-40"
           >
             {editingLineId ? `Update box · ${eur(unitPrice)}` : `Add box to basket · ${eur(unitPrice)}`}
           </button>
