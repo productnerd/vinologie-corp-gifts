@@ -58,8 +58,8 @@ function ProductCard({ product, onAdd, wine, added: inBox, blocked }) {
           ★ POPULAR
         </span>
       )}
-      {/* Name spans the full card width */}
-      <div className="pr-16 text-xs font-medium leading-snug text-cream/85">{product.name}</div>
+      {/* Name spans the full card width (reserve space only when the ADDED pill is shown) */}
+      <div className={'text-xs font-medium leading-snug text-cream/85 ' + (inBox ? 'pr-16' : '')}>{product.name}</div>
 
       <div className="flex flex-1 gap-3">
         {/* Wines: bare slender bottle at max height. Snacks: in a tile. */}
