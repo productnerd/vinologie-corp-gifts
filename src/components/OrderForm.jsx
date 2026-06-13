@@ -55,7 +55,7 @@ export default function OrderForm({ totals, basket, wish, onClose, onSubmit }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+    <div className={'fixed inset-0 z-50 flex items-center justify-center p-4 transition ' + (status === 'done' ? 'bg-black/60 backdrop-blur-md' : 'bg-black/50')} onClick={onClose}>
       <div className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-2xl bg-panel p-6 shadow-xl ring-1 ring-cream/15" onClick={(e) => e.stopPropagation()}>
         {status === 'done' && receipt ? (
           <div className="text-center">

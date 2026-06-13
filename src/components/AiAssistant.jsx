@@ -3,7 +3,7 @@ import { eur } from '../lib/pricing'
 // Result-only modal — the brief is entered inline in the assemble panel.
 export default function AiAssistant({ result, onClose, onUse }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={onClose}>
       <div className="flex max-h-[90vh] w-full max-w-lg flex-col rounded-2xl bg-panel p-6 shadow-xl ring-1 ring-gold/30" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between">
           <h2 className="font-display text-lg text-cream">AI Somm suggests</h2>
