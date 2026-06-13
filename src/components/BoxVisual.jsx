@@ -54,7 +54,7 @@ function Cell({ slot, active, onClick, mini }) {
         style={{ height: `${tall ? 56 : 22}cqh` }}
         className={
           'flex w-full items-center justify-center rounded-lg border-2 border-dashed text-[9px] font-semibold uppercase tracking-wide transition ' +
-          (active ? 'border-gold bg-gold/10 text-gold' : 'border-white/25 text-white/40 hover:border-white/50')
+          (active ? 'border-gold bg-gold/15 text-gold' : 'border-[#6b4a26]/70 text-[#6b4a26]/80 hover:border-[#6b4a26]')
         }
       >
         {ACCEPT_LABEL[slot.accept] || 'Item'}
