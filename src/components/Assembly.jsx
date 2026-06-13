@@ -13,31 +13,6 @@ function ProductThumb({ product, className }) {
   )
 }
 
-function Swatches({ title, note, options, selectedId, onSelect }) {
-  return (
-    <div>
-      <div className="mb-1.5 flex items-baseline gap-1.5 text-xs font-semibold uppercase tracking-wide text-cream/40">
-        {title}
-        {note && <span className="font-medium normal-case tracking-normal text-gold">{note}</span>}
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {options.map((o) => (
-          <button
-            key={o.id}
-            onClick={() => onSelect(o.id)}
-            title={`${o.name}${Number(o.surcharge) ? ` · +${eur(o.surcharge)}` : ''}`}
-            className={
-              'h-8 w-8 rounded-full border transition ' +
-              (o.id === selectedId ? 'ring-2 ring-gold ring-offset-2 ring-offset-panel' : 'border-white/15 hover:scale-105')
-            }
-            style={{ background: o.color_hex }}
-          />
-        ))}
-      </div>
-    </div>
-  )
-}
-
 function ScoreBar({ label, value }) {
   return (
     <div className="flex items-center gap-1.5">
@@ -89,7 +64,7 @@ function ProductCard({ product, onAdd, wine }) {
             <div className="text-[10px] font-medium uppercase tracking-wide text-cream/40">{product.country}</div>
           )}
           {product.description && (
-            <div className="mt-1 text-[8px] leading-tight text-cream/45 line-clamp-2">{product.description}</div>
+            <div title={product.description} className="mt-1 text-[8px] leading-tight text-cream/45 line-clamp-3 group-hover:line-clamp-none">{product.description}</div>
           )}
           {hasScores && (
             <div className="mt-2 flex flex-col gap-0.5">
@@ -114,8 +89,8 @@ function ProductCard({ product, onAdd, wine }) {
 }
 
 export default function Assembly({
-  templates, categories, productsByCat, bowOptions, paperOptions,
-  box, onApplyTemplate, onAddProduct, onSetBow, onSetPaper,
+  templates, categories, productsByCat,
+  box, onApplyTemplate, onAddProduct,
 }) {
   return (
     <div className="flex flex-col gap-7">
@@ -152,12 +127,6 @@ export default function Assembly({
             Custom · unlimited
           </button>
         </div>
-      </div>
-
-      {/* Bow + filler paper colors */}
-      <div className="flex flex-wrap gap-8">
-        <Swatches title="Bow color" note="+€2.50 / colour" options={bowOptions} selectedId={box.bowId} onSelect={onSetBow} />
-        <Swatches title="Filler paper color" note="+€2.50 / colour" options={paperOptions} selectedId={box.paperId} onSelect={onSetPaper} />
       </div>
 
       {/* Categories — always expanded */}

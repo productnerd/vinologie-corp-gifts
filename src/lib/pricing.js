@@ -7,21 +7,21 @@ export function discountPctForBoxCount(boxCount) {
 }
 
 // Price of a single assembled box: products inside + bow surcharge + paper surcharge.
-export function boxUnitPrice(box, { bowOptions, paperOptions }) {
+// box.bow / box.paper = { id, hex, surcharge }.
+export function boxUnitPrice(box) {
   const products = box.slots.reduce((sum, s) => sum + (s.product ? Number(s.product.price) : 0), 0)
-  const bow = bowOptions.find((o) => o.id === box.bowId)
-  const paper = paperOptions?.find((o) => o.id === box.paperId)
-  const bowFee = bow ? Number(bow.surcharge) : 0
-  const paperFee = paper ? Number(paper.surcharge) : 0
+  const bowFee = Number(box.bow?.surcharge) || 0
+  const paperFee = Number(box.paper?.surcharge) || 0
   return products + bowFee + paperFee
 }
 
 export const WISH_PER_BOX = 2
+export const COLOUR_SURCHARGE = 2.5
 
-export function basketTotals(basket, opts, wishPerBox = 0) {
+export function basketTotals(basket, wishPerBox = 0) {
   const boxCount = basket.reduce((n, line) => n + line.qty, 0)
   const subtotal = basket.reduce(
-    (sum, line) => sum + boxUnitPrice(line.box, opts) * line.qty,
+    (sum, line) => sum + boxUnitPrice(line.box) * line.qty,
     0,
   )
   const discountPct = discountPctForBoxCount(boxCount)

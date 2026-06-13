@@ -8,6 +8,7 @@ import OrderForm from './components/OrderForm'
 import AiAssistant from './components/AiAssistant'
 import ConfirmModal from './components/ConfirmModal'
 import HumanSommModal from './components/HumanSommModal'
+import ColorPicker from './components/ColorPicker'
 
 const slotAccepts = (accept, category) =>
   accept === 'wine' ? category === 'red_wine' || category === 'white_wine' : accept === category
@@ -18,7 +19,7 @@ export default function App() {
 
   // box.locked = true when a template defines fixed slots (no extra adds allowed)
   // box.templateId = which chip is active ('custom' or a template id)
-  const [box, setBox] = useState({ slots: [], bowId: null, paperId: null, locked: false, templateId: 'custom' })
+  const [box, setBox] = useState({ slots: [], bow: null, paper: null, locked: false, templateId: 'custom' })
   const [activeSlotId, setActiveSlotId] = useState(null)
   const [basket, setBasket] = useState([])
   const [editingLineId, setEditingLineId] = useState(null)
@@ -63,20 +64,17 @@ export default function App() {
       // Cheapest first within each category
       for (const c of cats.data) productsByCat[c.id].sort((a, b) => Number(a.price) - Number(b.price))
 
+      const optObj = (o) => (o ? { id: o.id, hex: o.color_hex, surcharge: Number(o.surcharge) } : null)
       setData({ categories: cats.data, productsByCat, productsById, templates: tmpls.data, bowOptions, paperOptions })
-      setBox({ slots: [], bowId: bowOptions[0]?.id ?? null, paperId: paperOptions[0]?.id ?? null, locked: false, templateId: 'custom' })
+      setBox({ slots: [], bow: optObj(bowOptions[0]), paper: optObj(paperOptions[0]), locked: false, templateId: 'custom' })
     })()
   }, [])
 
-  const opts = useMemo(
-    () => ({ bowOptions: data?.bowOptions ?? [], paperOptions: data?.paperOptions ?? [] }),
-    [data],
-  )
   const totals = useMemo(
-    () => basketTotals(basket, opts, wish.enabled ? WISH_PER_BOX : 0),
-    [basket, opts, wish.enabled],
+    () => basketTotals(basket, wish.enabled ? WISH_PER_BOX : 0),
+    [basket, wish.enabled],
   )
-  const unitPrice = data ? boxUnitPrice(box, opts) : 0
+  const unitPrice = data ? boxUnitPrice(box) : 0
   const filledCount = box.slots.filter((s) => s.product).length
 
   // --- box editing ---
@@ -185,7 +183,7 @@ export default function App() {
     }
   }
 
-  const resetBox = () => setBox((b) => ({ slots: [], bowId: b.bowId, paperId: b.paperId, locked: false, templateId: 'custom' }))
+  const resetBox = () => setBox((b) => ({ slots: [], bow: b.bow, paper: b.paper, locked: false, templateId: 'custom' }))
 
   // --- basket ---
   function addToBasket() {
@@ -215,9 +213,9 @@ export default function App() {
       ...form,
       boxes: basket.map((l) => ({
         qty: l.qty,
-        bowId: l.box.bowId,
-        paperId: l.box.paperId,
-        unitPrice: boxUnitPrice(l.box, opts),
+        bow: l.box.bow,
+        paper: l.box.paper,
+        unitPrice: boxUnitPrice(l.box),
         items: l.box.slots.filter((s) => s.product).map((s) => ({
           id: s.product.id, name: s.product.name, price: Number(s.product.price), category: s.product.category_id,
         })),
@@ -262,23 +260,21 @@ export default function App() {
         Tip: this builder works best on a desktop — assembling boxes is easier on a larger screen.
       </div>
 
-      <main className="grid flex-1 grid-cols-1 gap-8 overflow-y-auto p-6 sm:p-8 lg:grid-cols-[minmax(0,600px)_1fr] lg:overflow-hidden">
-        {/* LEFT — box (shown first, so it's on top on mobile) */}
-        <section className="flex flex-col rounded-2xl border border-white/10 bg-panel p-5 shadow-sm">
-          <div className="flex items-center justify-between">
-            <h2 className="font-display text-base text-cream/80">Your box</h2>
+      <main className="grid flex-1 grid-cols-1 gap-8 overflow-y-auto p-6 sm:p-8 lg:grid-cols-[minmax(0,660px)_1fr] lg:overflow-hidden">
+        {/* LEFT — box + colours (shown first, so it's on top on mobile) */}
+        <section className="flex flex-col rounded-2xl border border-white/10 bg-panel p-4 shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-x-8 gap-y-3">
+            <ColorPicker label="Bow color" options={data.bowOptions} value={box.bow} onSelect={(bow) => setBox((b) => ({ ...b, bow }))} />
+            <ColorPicker label="Filler paper" options={data.paperOptions} value={box.paper} onSelect={(paper) => setBox((b) => ({ ...b, paper }))} />
             {editingLineId && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-700">Editing basket box</span>}
           </div>
-          <div className="warm-glow mt-2 flex flex-1 flex-col">
-            <BoxVisual
-              box={box} bowOptions={data.bowOptions} paperOptions={data.paperOptions}
-              activeSlotId={activeSlotId} onSlotClick={onSlotClick} unitPrice={unitPrice}
-            />
+          <div className="warm-glow mt-3 flex flex-1 flex-col">
+            <BoxVisual box={box} activeSlotId={activeSlotId} onSlotClick={onSlotClick} />
           </div>
           <button
             onClick={addToBasket}
             disabled={filledCount === 0}
-            className="glow-cta mt-5 w-full rounded-full bg-cream py-3 font-semibold text-ink hover:bg-cream-bright disabled:opacity-40 disabled:shadow-none"
+            className="glow-cta mt-4 w-full rounded-full bg-cream py-3 font-semibold text-ink hover:bg-cream-bright disabled:opacity-40 disabled:shadow-none"
           >
             {editingLineId ? 'Update box in basket' : `Add box to basket · ${eur(unitPrice)}`}
           </button>
@@ -286,36 +282,35 @@ export default function App() {
 
         {/* RIGHT — assembly */}
         <section className="overflow-y-auto rounded-2xl border border-white/10 bg-panel p-6 shadow-sm sm:p-8">
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
-            <h2 className="font-display text-base text-cream/80">Assemble</h2>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setHumanOpen(true)}
-                className="rounded-full border border-white/15 px-3 py-1.5 text-sm font-medium text-cream/70 hover:bg-cream-bright/5"
-              >
-                Talk to a human somm
-              </button>
-              <button
-                onClick={() => setAiOpen(true)}
-                className="rounded-full border border-gold/40 bg-gold/10 px-3 py-1.5 text-sm font-semibold text-gold transition hover:bg-gold hover:text-ink"
-              >
-                ✨ AI Somm
-              </button>
-            </div>
-          </div>
           <Assembly
             templates={data.templates} categories={data.categories} productsByCat={data.productsByCat}
-            bowOptions={data.bowOptions} paperOptions={data.paperOptions} box={box}
-            onApplyTemplate={applyTemplate} onAddProduct={addProduct}
-            onSetBow={(id) => setBox((b) => ({ ...b, bowId: id }))}
-            onSetPaper={(id) => setBox((b) => ({ ...b, paperId: id }))}
+            box={box} onApplyTemplate={applyTemplate} onAddProduct={addProduct}
           />
         </section>
       </main>
 
+      {/* Floating "Talk to:" — AI Somm (left) + Human Somm (right) */}
+      <div className="fixed bottom-5 right-5 z-30 flex flex-col items-end gap-1.5">
+        <span className="pr-1 text-[11px] font-semibold uppercase tracking-wide text-cream/50">Talk to:</span>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setAiOpen(true)}
+            className="glow-cta rounded-full border border-gold/40 bg-gold/20 px-4 py-2 text-sm font-semibold text-gold shadow-lg transition hover:bg-gold hover:text-ink"
+          >
+            ✨ AI Somm
+          </button>
+          <button
+            onClick={() => setHumanOpen(true)}
+            className="rounded-full border border-white/15 bg-panel px-4 py-2 text-sm font-medium text-cream/80 shadow-lg transition hover:bg-cream-bright/10"
+          >
+            Human Somm
+          </button>
+        </div>
+      </div>
+
       {basketOpen && (
         <BasketDrawer
-          basket={basket} totals={totals} opts={opts}
+          basket={basket} totals={totals}
           wish={wish} setWish={setWish}
           onClose={() => setBasketOpen(false)}
           onQty={setQty} onEdit={editLine} onRemove={removeLine}

@@ -28,31 +28,6 @@ function ProductImg({ product, style }) {
   )
 }
 
-function BowOverlay({ bow, mini }) {
-  const [ok, setOk] = useState(true)
-  if (!bow) return null
-  const file = asset(`assets/bows/${bow.name.toLowerCase()}.png`)
-  if (ok) {
-    return (
-      <img
-        src={file} alt={`${bow.name} bow`} onError={() => setOk(false)}
-        className="pointer-events-none absolute left-1/2 top-[1%] z-30 w-[24%] -translate-x-1/2 drop-shadow-md"
-      />
-    )
-  }
-  if (mini) return null
-  const h = bow.color_hex.replace('#', '')
-  const light = (0.299 * parseInt(h.slice(0, 2), 16) + 0.587 * parseInt(h.slice(2, 4), 16) + 0.114 * parseInt(h.slice(4, 6), 16)) > 150
-  return (
-    <span
-      className={'pointer-events-none absolute right-[5%] top-[3%] z-30 rounded-full px-2 py-1 text-[10px] font-semibold shadow ring-1 ring-black/10 ' + (light ? 'text-ink' : 'text-white')}
-      style={{ background: bow.color_hex }}
-    >
-      {bow.name} bow
-    </span>
-  )
-}
-
 // Each item gets its own flex cell so cells never overlap. Height is driven by
 // display_scale (relative real-world size); object-contain keeps it tidy.
 function Cell({ slot, active, onClick, mini }) {
@@ -111,10 +86,9 @@ function Row({ items, cap, cellFor }) {
   )
 }
 
-export default function BoxVisual({ box, bowOptions, paperOptions, activeSlotId, onSlotClick, unitPrice, mini = false }) {
+export default function BoxVisual({ box, activeSlotId, onSlotClick, mini = false }) {
   const [boxImgOk, setBoxImgOk] = useState(true)
-  const bow = bowOptions.find((o) => o.id === box.bowId)
-  const paper = paperOptions?.find((o) => o.id === box.paperId)
+  const paperHex = box.paper?.hex
   const bottles = box.slots.filter((s) => isTall(s.accept))
   const snacks = box.slots.filter((s) => !isTall(s.accept))
 
@@ -132,11 +106,9 @@ export default function BoxVisual({ box, bowOptions, paperOptions, activeSlotId,
           <div className="absolute inset-0 rounded-2xl border-[6px] border-[#caa15e]/50 bg-[#efe7d8] shadow-inner" />
         )}
 
-        {paper && paper.color_hex.toLowerCase() !== '#ffffff' && (
-          <div className={INNER + ' z-0 rounded-md mix-blend-multiply'} style={{ background: paper.color_hex, opacity: 0.5 }} />
+        {paperHex && paperHex.toLowerCase() !== '#ffffff' && (
+          <div className={INNER + ' z-0 rounded-md mix-blend-multiply'} style={{ background: paperHex, opacity: 0.5 }} />
         )}
-
-        <BowOverlay bow={bow} mini={mini} />
 
         {/* Items: bottles row on top, snacks row below — separate, never overlapping */}
         <div className={INNER + ' z-10 flex flex-col justify-center gap-[1.5cqh] overflow-hidden'} style={{ containerType: 'size' }}>

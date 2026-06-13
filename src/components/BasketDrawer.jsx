@@ -88,7 +88,7 @@ function WishSection({ wish, setWish, boxCount }) {
   )
 }
 
-export default function BasketDrawer({ basket, totals, opts, wish, setWish, onClose, onQty, onEdit, onRemove, onCheckout }) {
+export default function BasketDrawer({ basket, totals, wish, setWish, onClose, onQty, onEdit, onRemove, onCheckout }) {
   return (
     <div className="fixed inset-0 z-40 flex justify-end bg-black/40" onClick={onClose}>
       <div className="flex h-full w-full max-w-md flex-col bg-panel shadow-xl" onClick={(e) => e.stopPropagation()}>
@@ -103,16 +103,22 @@ export default function BasketDrawer({ basket, totals, opts, wish, setWish, onCl
           ) : (
             <ul className="flex flex-col gap-3">
               {basket.map((line) => (
-                <li key={line.id} className="rounded-xl border border-white/10 p-3">
-                  <div className="flex items-start justify-between gap-3">
+                <li key={line.id} className="relative rounded-xl border border-white/10 p-3">
+                  <button
+                    onClick={() => onRemove(line.id)}
+                    title="Remove box"
+                    className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full text-lg leading-none text-cream/40 transition hover:bg-white/10 hover:text-wine"
+                  >
+                    ×
+                  </button>
+                  <div className="flex items-start gap-3 pr-6">
                     <div className="w-24 shrink-0">
-                      <BoxVisual box={line.box} bowOptions={opts.bowOptions} paperOptions={opts.paperOptions} mini />
+                      <BoxVisual box={line.box} mini />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="text-sm font-semibold text-cream/80">{eur(boxUnitPrice(line.box, opts))} / box</div>
+                      <div className="text-sm font-semibold text-cream/80">{eur(boxUnitPrice(line.box))} / box</div>
                       <div className="mt-0.5 line-clamp-3 text-xs text-cream/50">{boxSummary(line.box)}</div>
                     </div>
-                    <button onClick={() => onRemove(line.id)} className="shrink-0 text-xs text-cream/40 hover:text-cream">Remove</button>
                   </div>
                   <div className="mt-3 flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -166,6 +172,9 @@ export default function BasketDrawer({ basket, totals, opts, wish, setWish, onCl
           >
             Submit order
           </button>
+          <p className="mt-2 text-center text-[11px] leading-snug text-cream/40">
+            No payment is taken now — we'll call you back to verify your order and address any custom requests.
+          </p>
         </div>
       </div>
     </div>
