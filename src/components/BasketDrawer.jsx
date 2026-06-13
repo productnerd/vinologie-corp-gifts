@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { eur, boxUnitPrice, WISH_PER_BOX } from '../lib/pricing'
 import BoxVisual from './BoxVisual'
 
@@ -6,6 +6,50 @@ function boxSummary(box) {
   const filled = box.slots.filter((s) => s.product)
   if (filled.length === 0) return 'Empty box'
   return filled.map((s) => s.product.name).join(', ')
+}
+
+// Render the wish text with @name tokens visually highlighted (as variables).
+function highlightTokens(text) {
+  const nodes = []
+  const re = /@\w+/g
+  let last = 0
+  let m
+  let i = 0
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) nodes.push(text.slice(last, m.index))
+    nodes.push(
+      <mark key={i++} className="rounded bg-gold/30 font-semibold text-gold">{m[0]}</mark>,
+    )
+    last = m.index + m[0].length
+  }
+  nodes.push(text.slice(last))
+  return nodes
+}
+
+// Textarea with an overlay that highlights @name tokens. The textarea text is
+// transparent so the highlighted backdrop shows through; the caret stays visible.
+function WishInput({ value, onChange }) {
+  const backdropRef = useRef(null)
+  return (
+    <div className="relative mt-2 rounded-lg border border-white/15 bg-panel2">
+      <div
+        ref={backdropRef}
+        aria-hidden
+        className="pointer-events-none absolute inset-0 overflow-hidden whitespace-pre-wrap break-words p-2.5 text-sm leading-normal text-cream"
+      >
+        {highlightTokens(value)}
+        {'\n'}
+      </div>
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onScroll={(e) => { if (backdropRef.current) backdropRef.current.scrollTop = e.target.scrollTop }}
+        rows="3"
+        placeholder="e.g. Happy holidays @name — thank you for a wonderful year!"
+        className="relative block w-full resize-none border-0 bg-transparent p-2.5 text-sm leading-normal text-transparent caret-cream outline-none placeholder:text-cream/40"
+      />
+    </div>
+  )
 }
 
 // Custom printed-card wish: optional message (with @name tokens) + optional CSV of names.
@@ -68,11 +112,7 @@ function WishSection({ wish, setWish, boxCount }) {
     <div className="mb-4 rounded-xl border border-gold/30 bg-gold/5 p-3">
       <div className="text-sm font-semibold text-gold">Custom wish <span className="font-normal text-cream/50">(+{eur(WISH_PER_BOX)}/box)</span></div>
       <p className="mt-1 text-[11px] text-cream/45">A printed card in every box. Use <span className="font-semibold text-gold">@name</span> to personalise per recipient.</p>
-      <textarea
-        value={text} onChange={(e) => setText(e.target.value)} rows="3"
-        placeholder="e.g. Happy holidays @name — thank you for a wonderful year!"
-        className="mt-2 w-full rounded-lg border border-white/15 bg-panel2 p-2.5 text-sm text-cream placeholder:text-cream/40"
-      />
+      <WishInput value={text} onChange={setText} />
       <div className="mt-2 flex items-center justify-between gap-2">
         <label className="cursor-pointer rounded-full border border-white/15 px-3 py-1.5 text-xs font-medium text-cream/70 hover:bg-cream-bright/5">
           {names.length ? `${names.length} names ✓` : 'Upload names (CSV)'}
