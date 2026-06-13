@@ -94,6 +94,10 @@ export default function App() {
   )
   const unitPrice = data ? boxUnitPrice(box) : 0
   const filledCount = box.slots.filter((s) => s.product).length
+  const emptySlots = box.slots.filter((s) => !s.product).length
+  // A template box can only be added once every slot is filled; a custom box as
+  // soon as it holds at least one item.
+  const boxComplete = box.locked ? box.slots.length > 0 && emptySlots === 0 : filledCount > 0
   const addedIds = useMemo(
     () => new Set(box.slots.filter((s) => s.product).map((s) => s.product.id)),
     [box.slots],
@@ -321,14 +325,21 @@ export default function App() {
           <div className="warm-glow mt-3 flex min-h-0 flex-1 items-center justify-center overflow-hidden">
             <BoxVisual box={box} activeSlotId={activeSlotId} onSlotClick={onSlotClick} />
           </div>
-          {/* Always-visible price + add button at the bottom of the box panel */}
-          <button
-            onClick={addToBasket}
-            disabled={filledCount === 0}
-            className="mt-3 w-full rounded-full border border-cream/30 py-2 text-sm font-medium text-cream/90 transition hover:bg-cream hover:text-ink disabled:opacity-40"
-          >
-            {editingLineId ? `Update box · ${eur(unitPrice)}` : `Add box to basket · ${eur(unitPrice)}`}
-          </button>
+          {/* Add button appears only once the box is ready: a template fully filled, or a custom box with ≥1 item */}
+          {boxComplete ? (
+            <button
+              onClick={addToBasket}
+              className="mt-3 w-full rounded-full border border-cream/30 py-2 text-sm font-medium text-cream/90 transition hover:bg-cream hover:text-ink"
+            >
+              {editingLineId ? `Update box · ${eur(unitPrice)}` : `Add box to basket · ${eur(unitPrice)}`}
+            </button>
+          ) : (
+            box.locked && filledCount > 0 && (
+              <p className="mt-3 text-center text-xs text-cream/40">
+                Fill {emptySlots} more slot{emptySlots === 1 ? '' : 's'} to add this box to your basket.
+              </p>
+            )
+          )}
         </section>
 
         {/* RIGHT — assembly */}
